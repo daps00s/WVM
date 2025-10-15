@@ -1,0 +1,397 @@
+/* Responsive CSS for WVM System
+ * This file contains media queries to make all pages responsive across different screen sizes
+ */
+
+/* Base responsive rules */
+html, body {
+    overflow-x: hidden;
+}
+
+img {
+    max-width: 100%;
+    height: auto;
+}
+
+/* Extra large devices (large desktops, 1200px and up) */
+@media (min-width: 1200px) {
+    .container {
+        max-width: 1140px;
+    }
+}
+
+/* Large devices (desktops, 992px to 1199px) */
+@media (min-width: 992px) and (max-width: 1199px) {
+    .container {
+        max-width: 960px;
+    }
+    
+    /* Dashboard adjustments */
+    .dashboard-container {
+        grid-template-columns: 240px 1fr;
+    }
+    
+    .sidebar {
+        width: 240px;
+    }
+    
+    .menu-link {
+        padding: 10px 20px;
+        font-size: 14px;
+    }
+    
+    /* Reports grid adjustments */
+    .reports-grid {
+        grid-template-columns: 1fr 1fr;
+        gap: 15px;
+    }
+}
+
+/* Medium devices (tablets, 768px to 991px) */
+@media (min-width: 768px) and (max-width: 991px) {
+    .container {
+        max-width: 720px;
+    }
+    
+    /* Dashboard adjustments */
+    .dashboard-container {
+        grid-template-columns: 200px 1fr;
+    }
+    
+    .sidebar {
+        width: 200px;
+    }
+    
+    .menu-link {
+        padding: 10px 15px;
+        font-size: 14px;
+    }
+    
+    .menu-link i {
+        margin-right: 8px;
+    }
+    
+    /* Content area adjustments */
+    .content-wrapper {
+        padding: 0 20px;
+    }
+    
+    .content-title {
+        font-size: 22px;
+    }
+    
+    /* Reports grid adjustments */
+    .reports-grid {
+        grid-template-columns: 1fr;
+        gap: 20px;
+    }
+    
+    /* Table adjustments */
+    .table-container {
+        overflow-x: auto;
+    }
+}
+
+/* Small devices (landscape phones, 576px to 767px) */
+@media (min-width: 576px) and (max-width: 767px) {
+    .container {
+        max-width: 540px;
+    }
+    
+    /* Dashboard layout change to mobile view */
+    .dashboard-container {
+        grid-template-columns: 1fr;
+    }
+    
+    .sidebar {
+        position: fixed;
+        left: -280px;
+        top: 70px;
+        width: 280px;
+        height: calc(100vh - 70px);
+        z-index: 1000;
+        transition: left 0.3s ease;
+        box-shadow: 2px 0 10px rgba(0, 0, 0, 0.2);
+    }
+    
+    .sidebar.active {
+        left: 0;
+    }
+    
+    /* Burger menu styling */
+    .menu-toggle {
+        display: flex !important;
+        align-items: center;
+        justify-content: center;
+        width: 40px;
+        height: 40px;
+        background: transparent;
+        border: none;
+        color: var(--white);
+        font-size: 20px;
+        cursor: pointer;
+        margin-left: 15px;
+    }
+    
+    /* Header adjustments */
+    .dashboard-header {
+        padding: 0 15px;
+    }
+    
+    /* Hide header title on small screens since we have SWD beside logo */
+    .header-title:not(.no-transform) {
+        display: none;
+    }
+    
+    /* Content area adjustments */
+    .content-area {
+        padding: 20px 0 0 0;
+    }
+    
+    .content-wrapper {
+        padding: 0 15px;
+    }
+    
+    .content-title {
+        font-size: 20px;
+    }
+    
+    /* Stat cards in mobile view - 3x2 grid with only icons */
+    .stats-grid {
+        display: grid;
+        grid-template-columns: repeat(3, 1fr);
+        grid-template-rows: repeat(2, auto);
+        gap: 10px;
+    }
+    
+    .stat-card {
+        padding: 10px;
+        display: flex;
+        flex-direction: column;
+        justify-content: center;
+        align-items: center;
+        text-align: center;
+    }
+    
+    .stat-card .stat-content {
+        display: block;
+    }
+    
+    .stat-card .stat-content .stat-value,
+    .stat-card .stat-content .stat-change {
+        display: none;
+    }
+    
+    .stat-card .stat-content .stat-title {
+        font-size: 12px;
+        margin-top: 5px;
+    }
+    
+    .stat-card .stat-icon {
+        margin-right: 0;
+        width: 40px;
+        height: 40px;
+        font-size: 1.5em;
+    }
+    
+    /* Login container adjustments */
+    .login-container {
+        padding: 30px 20px;
+        max-width: 400px;
+    }
+    
+    /* Table adjustments */
+    .table-container {
+        overflow-x: auto;
+    }
+    
+    .data-table th, .data-table td {
+        padding: 10px 12px;
+    }
+}
+
+/* Extra small devices (portrait phones, less than 576px) */
+@media (max-width: 575px) {
+    /* Dashboard layout change to mobile view */
+    .dashboard-container {
+        grid-template-columns: 1fr;
+    }
+    
+    .sidebar {
+        position: fixed;
+        left: -280px;
+        top: 60px;
+        width: 280px;
+        height: calc(100vh - 60px);
+        z-index: 1000;
+        transition: left 0.3s ease;
+        box-shadow: 2px 0 10px rgba(0, 0, 0, 0.2);
+    }
+    
+    .sidebar.active {
+        left: 0;
+    }
+    
+    /* Burger menu styling */
+    .menu-toggle {
+        display: flex !important;
+        align-items: center;
+        justify-content: center;
+        width: 36px;
+        height: 36px;
+        background: transparent;
+        border: none;
+        color: var(--white);
+        font-size: 18px;
+        cursor: pointer;
+        margin-left: 10px;
+    }
+    
+    /* Header adjustments */
+    .dashboard-header {
+        padding: 0 10px;
+        height: 60px;
+    }
+    
+    .logo-small {
+        width: 40px;
+        height: 40px;
+        margin-right: 10px;
+    }
+    
+    .logo-name {
+        display: none;
+    }
+    
+    .header-title {
+        display: none;
+    }
+    
+    .user-info {
+        gap: 8px;
+    }
+    
+    .user-avatar {
+        width: 32px;
+        height: 32px;
+    }
+    
+    .user-name {
+        display: none; /* Hide username on very small screens */
+    }
+    
+    /* Content area adjustments */
+    .content-area {
+        padding: 15px 0 0 0;
+    }
+    
+    .content-wrapper {
+        padding: 0 10px;
+    }
+    
+    .content-title {
+        font-size: 18px;
+    }
+    
+    .content-header {
+        flex-direction: column;
+        align-items: flex-start;
+        gap: 10px;
+        margin-bottom: 20px;
+    }
+    
+    /* Stat cards in mobile view - 3x2 grid with only icons */
+    .stats-grid {
+        display: grid;
+        grid-template-columns: repeat(3, 1fr);
+        grid-template-rows: repeat(2, auto);
+        gap: 8px;
+    }
+    
+    .stat-card {
+        padding: 8px;
+        display: flex;
+        justify-content: center;
+        align-items: center;
+    }
+    
+    .stat-card .stat-content {
+        display: none;
+    }
+    
+    .stat-card .stat-icon {
+        margin-right: 0;
+        width: 36px;
+        height: 36px;
+        font-size: 1.4em;
+    }
+    
+    /* Login container adjustments */
+    .login-container {
+        padding: 25px 15px;
+        max-width: 320px;
+    }
+    
+    /* Form adjustments */
+    .input-group input {
+        padding: 10px 12px;
+    }
+    
+    button {
+        padding: 12px 16px;
+    }
+    
+    /* Table adjustments */
+    .table-container {
+        overflow-x: auto;
+    }
+    
+    .data-table th, .data-table td {
+        padding: 8px 10px;
+        font-size: 13px;
+    }
+    
+    /* Action buttons adjustments */
+    .btn-action {
+        width: 28px;
+        height: 28px;
+    }
+    
+    /* Date filter adjustments */
+    .date-filter {
+        flex-direction: column;
+        align-items: flex-start;
+    }
+    
+    .date-filter input {
+        width: 100%;
+    }
+}
+
+/* Additional responsive rules for sidebar behavior */
+@media (max-width: 991px) {
+    .sidebar {
+        position: fixed;
+        left: -280px;
+        top: 70px;
+        width: 280px;
+        height: calc(100vh - 70px);
+        z-index: 1000;
+        transition: left 0.3s ease;
+        box-shadow: 2px 0 10px rgba(0, 0, 0, 0.2);
+    }
+    
+    .sidebar.active {
+        left: 0;
+    }
+    
+    .menu-toggle {
+        display: flex !important;
+    }
+}
+
+@media (max-width: 576px) {
+    .sidebar {
+        top: 60px;
+        height: calc(100vh - 60px);
+    }
+}

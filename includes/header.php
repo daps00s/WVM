@@ -15,19 +15,18 @@ $pageTitle = $pageTitle ?? 'Dashboard';
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title><?php echo htmlspecialchars($pageTitle); ?> - Water Vending Admin</title>
-    <link rel="stylesheet" href="assets/css/styles.css">
-    <link rel="stylesheet" href="assets/css/dashboard.css">
+    <link rel="stylesheet" href="assets/css/navigations.css">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css">
 </head>
 <body>
     <div class="dashboard-container">
         <header class="dashboard-header">
             <div class="header-left">
-                <img src="assets/images/logo-small.png" alt="Logo" class="logo-small">
-                <div class="header-title">Smart Water Dashboard</div>
                 <button class="menu-toggle" id="menuToggle">
                     <i class="fas fa-bars"></i>
                 </button>
+                <img src="assets/images/logo-small.png" alt="Logo" class="logo-small">
+                <div class="header-title">Smart Water Dashboard</div>
             </div>
             <div class="user-info">
                 <div class="user-avatar" id="userAvatar"><?php echo strtoupper(substr($_SESSION['admin_username'], 0, 1)); ?></div>
@@ -93,47 +92,53 @@ $pageTitle = $pageTitle ?? 'Dashboard';
         <?php require_once 'includes/user_profile_slide.php'; ?>
         
         <script>
-        document.addEventListener('DOMContentLoaded', function() {
-            const userName = document.getElementById('userName');
-            const profileSlide = document.getElementById('userProfileSlide');
-            const closeBtn = document.getElementById('closeProfileSlide');
-            
-            // Open slide panel when username is clicked
-            userName.addEventListener('click', function(event) {
-                event.stopPropagation();
-                profileSlide.classList.add('open');
-            });
-            
-            // Close slide panel when close button is clicked
-            closeBtn.addEventListener('click', function() {
-                profileSlide.classList.remove('open');
-            });
-            
-            // Close when clicking outside the slide panel
-            document.addEventListener('click', function(event) {
-                if (!profileSlide.contains(event.target) && event.target !== userName) {
-                    profileSlide.classList.remove('open');
-                }
-            });
-            
-            // Auto-hide notification toast
-            const toast = document.querySelector('.notification-toast');
-            if (toast) {
-                setTimeout(() => {
-                    toast.style.opacity = '0';
-                    setTimeout(() => {
-                        toast.style.display = 'none';
-                    }, 300);
-                }, 3000);
-            }
-            
-            // Menu toggle for sidebar
-            const menuToggle = document.getElementById('menuToggle');
-            const sidebar = document.getElementById('sidebar');
-            menuToggle.addEventListener('click', function() {
-                sidebar.classList.toggle('active');
-            });
-        });
-        </script>
+document.addEventListener('DOMContentLoaded', function() {
+    const userName = document.getElementById('userName');
+    const profileSlide = document.getElementById('userProfileSlide');
+    const closeBtn = document.getElementById('closeProfileSlide');
+    const menuToggle = document.getElementById('menuToggle');
+    const sidebar = document.getElementById('sidebar');
+    
+    // Menu toggle for sidebar - SIMPLIFIED VERSION
+    menuToggle.addEventListener('click', function() {
+        sidebar.classList.toggle('active');
+    });
+    
+    // Open slide panel when username is clicked
+    userName.addEventListener('click', function(event) {
+        event.stopPropagation();
+        profileSlide.classList.add('open');
+    });
+    
+    // Close slide panel when close button is clicked
+    closeBtn.addEventListener('click', function() {
+        profileSlide.classList.remove('open');
+    });
+    
+    // Close when clicking outside the slide panel
+    document.addEventListener('click', function(event) {
+        if (!profileSlide.contains(event.target) && event.target !== userName) {
+            profileSlide.classList.remove('open');
+        }
+    });
+    
+    // Auto-hide notification toast
+    const toast = document.querySelector('.notification-toast');
+    if (toast) {
+        setTimeout(() => {
+            toast.style.opacity = '0';
+            setTimeout(() => {
+                toast.style.display = 'none';
+            }, 300);
+        }, 3000);
+    }
+
+    // Force menu toggle functionality
+document.getElementById('menuToggle').addEventListener('click', function() {
+    document.getElementById('sidebar').classList.toggle('active');
+});
+
+});
+</script>
 </body>
 </html>

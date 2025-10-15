@@ -45,16 +45,6 @@ document.addEventListener('DOMContentLoaded', function() {
         }
     });
 
-    // Mobile menu toggle
-    const menuToggle = document.createElement('div');
-    menuToggle.className = 'menu-toggle';
-    menuToggle.innerHTML = '<i class="fas fa-bars"></i>';
-    document.querySelector('.header-left').appendChild(menuToggle);
-    
-    menuToggle.addEventListener('click', function() {
-        document.querySelector('.sidebar').classList.toggle('active');
-    });
-
     // Simulate loading
     setTimeout(() => {
         document.querySelectorAll('.stat-card').forEach(card => {
