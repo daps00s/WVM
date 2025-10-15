@@ -1,5 +1,4 @@
-
-
+/* assets/css/machines.css */
 .modal {
     display: none;
     position: fixed;
@@ -269,6 +268,7 @@
     padding: 20px 0;
     background-color: #f8f9fa;
     width: 100%;
+    overflow-x: hidden;
 }
 
 .content-wrapper {
@@ -387,6 +387,21 @@
     border-color: #3498db;
 }
 
+.table-container {
+    width: 100%;
+    overflow-x: auto;
+}
+
+.table-wrapper {
+    min-width: 800px;
+}
+
+.action-buttons {
+    display: flex;
+    flex-wrap: nowrap;
+    gap: 5px;
+}
+
 @keyframes slideIn {
     from {
         transform: translateX(100%);
@@ -418,18 +433,54 @@
     }
 }
 
-@media (max-width: 768px) {
-    .content-actions {
+/* Responsive Design */
+@media (max-width: 1200px) {
+    .content-wrapper {
+        padding: 0 20px;
+    }
+}
+
+@media (max-width: 992px) {
+    .content-header {
         flex-direction: column;
         align-items: flex-start;
     }
     
+    .content-actions {
+        width: 100%;
+        justify-content: space-between;
+    }
+    
     .search-group input {
+        width: 180px;
+    }
+    
+    .table-wrapper {
+        min-width: 700px;
+    }
+}
+
+@media (max-width: 768px) {
+    .content-wrapper {
+        padding: 0 15px;
+    }
+    
+    .content-actions {
+        flex-direction: column;
+        align-items: flex-start;
+        gap: 10px;
+    }
+    
+    .search-group, .rows-per-page {
         width: 100%;
     }
     
-    .rows-per-page select {
+    .search-group input, .rows-per-page select {
         width: 100%;
+    }
+    
+    .search-label, .rows-label {
+        min-width: 100px;
     }
     
     .btn-primary {
@@ -437,8 +488,182 @@
         justify-content: center;
     }
     
+    .btn-text {
+        display: inline;
+    }
+    
     .modal-content {
         width: 95%;
         margin: 10% auto;
+    }
+    
+    .data-table th, .data-table td {
+        padding: 8px;
+        font-size: 12px;
+    }
+    
+    .capacity-col, .water-col {
+        display: none;
+    }
+    
+    .action-buttons {
+        flex-direction: column;
+        gap: 5px;
+    }
+    
+    .btn-action {
+        margin-right: 0;
+        width: 32px;
+        height: 32px;
+    }
+    
+    .status-btn {
+        min-width: 70px;
+        padding: 4px 8px;
+        font-size: 12px;
+    }
+    
+    .modal-header h2 {
+        font-size: 18px;
+    }
+    
+    .modal-body {
+        padding: 15px;
+    }
+    
+    .modal-footer {
+        padding: 10px 15px;
+        flex-direction: column;
+        gap: 10px;
+    }
+    
+    .btn-primary, .btn-secondary, .btn-danger {
+        width: 100%;
+        text-align: center;
+    }
+    
+    .pagination button {
+        padding: 6px 10px;
+        font-size: 12px;
+    }
+}
+
+@media (max-width: 576px) {
+    .content-wrapper {
+        padding: 0 10px;
+    }
+    
+    .content-title {
+        font-size: 20px;
+    }
+    
+    .modal-content {
+        width: 98%;
+        margin: 5% auto;
+    }
+    
+    .data-table th, .data-table td {
+        padding: 6px;
+        font-size: 11px;
+    }
+    
+    .location-col {
+        display: none;
+    }
+    
+    .table-wrapper {
+        min-width: 500px;
+    }
+    
+    .btn-action {
+        width: 28px;
+        height: 28px;
+    }
+    
+    .btn-action i {
+        font-size: 12px;
+    }
+    
+    .status-btn {
+        min-width: 60px;
+        padding: 3px 6px;
+        font-size: 11px;
+    }
+    
+    .modal-header {
+        padding: 10px 15px;
+    }
+    
+    .modal-body {
+        padding: 10px;
+    }
+    
+    .modal-footer {
+        padding: 10px;
+    }
+    
+    .input-group {
+        margin-bottom: 15px;
+    }
+    
+    .input-group input, .input-group select {
+        padding: 8px;
+    }
+    
+    .btn-primary, .btn-secondary, .btn-danger {
+        padding: 8px 15px;
+        font-size: 13px;
+    }
+    
+    .pagination button {
+        padding: 4px 8px;
+        font-size: 11px;
+    }
+}
+
+@media (max-width: 400px) {
+    .content-title {
+        font-size: 18px;
+    }
+    
+    .table-wrapper {
+        min-width: 450px;
+    }
+    
+    .data-table th, .data-table td {
+        padding: 4px;
+        font-size: 10px;
+    }
+    
+    .status-col {
+        display: none;
+    }
+    
+    .btn-action {
+        width: 26px;
+        height: 26px;
+    }
+    
+    .modal-header h2 {
+        font-size: 16px;
+    }
+    
+    .input-group label {
+        font-size: 13px;
+    }
+    
+    .input-group input, .input-group select {
+        padding: 6px;
+        font-size: 13px;
+    }
+    
+    .btn-primary, .btn-secondary, .btn-danger {
+        padding: 6px 12px;
+        font-size: 12px;
+    }
+    
+    .pagination button {
+        padding: 3px 6px;
+        font-size: 10px;
     }
 }

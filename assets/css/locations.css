@@ -1,5 +1,4 @@
-
-
+/* assets/css/locations.css */
 .modal {
     display: none;
     position: fixed;
@@ -234,6 +233,7 @@
     padding: 20px 0;
     background-color: #f8f9fa;
     width: 100%;
+    overflow-x: hidden;
 }
 
 .content-wrapper {
@@ -448,6 +448,16 @@
     color: #34495e;
 }
 
+.chart-container {
+    height: 200px;
+    margin-bottom: 20px;
+}
+
+.action-buttons {
+    display: flex;
+    flex-wrap: nowrap;
+}
+
 @keyframes slideIn {
     from { transform: translateX(100%); opacity: 0; }
     to { transform: translateX(0); opacity: 1; }
@@ -463,23 +473,67 @@
     to { opacity: 1; transform: translateY(0); }
 }
 
-@media (max-width: 768px) {
-    .content-actions {
+/* Responsive Design */
+@media (max-width: 1200px) {
+    .content-wrapper {
+        padding: 0 20px;
+    }
+}
+
+@media (max-width: 992px) {
+    .content-header {
         flex-direction: column;
         align-items: flex-start;
     }
     
+    .content-actions {
+        width: 100%;
+        justify-content: space-between;
+    }
+    
     .search-group input {
+        width: 180px;
+    }
+    
+    .table-wrapper {
+        overflow-x: auto;
+    }
+    
+    .data-table {
+        min-width: 800px;
+    }
+}
+
+@media (max-width: 768px) {
+    .content-wrapper {
+        padding: 0 15px;
+    }
+    
+    .content-actions {
+        flex-direction: column;
+        align-items: flex-start;
+        gap: 10px;
+    }
+    
+    .search-group, .rows-per-page {
         width: 100%;
     }
     
-    .rows-per-page select {
+    .search-group input, .rows-per-page select {
         width: 100%;
+    }
+    
+    .search-label, .rows-label {
+        min-width: 100px;
     }
     
     .btn-primary {
         width: 100%;
         justify-content: center;
+    }
+    
+    .btn-text {
+        display: inline;
     }
     
     .modal-content {
@@ -492,8 +546,145 @@
         gap: 10px;
     }
     
+    .control-text {
+        display: inline;
+    }
+    
     .data-table th, .data-table td {
         padding: 8px;
         font-size: 12px;
+    }
+    
+    .coord-col {
+        display: none;
+    }
+    
+    .action-buttons {
+        flex-direction: column;
+        gap: 5px;
+    }
+    
+    .btn-action {
+        margin-right: 0;
+    }
+    
+    .map-container {
+        padding: 15px;
+    }
+    
+    #map {
+        height: 300px;
+    }
+    
+    .chart-container {
+        height: 180px;
+    }
+}
+
+@media (max-width: 576px) {
+    .content-wrapper {
+        padding: 0 10px;
+    }
+    
+    .content-title {
+        font-size: 20px;
+    }
+    
+    .modal-content {
+        width: 98%;
+        margin: 5% auto;
+    }
+    
+    .modal-header h2 {
+        font-size: 18px;
+    }
+    
+    .modal-body {
+        padding: 15px;
+    }
+    
+    .modal-footer {
+        flex-direction: column;
+        gap: 10px;
+    }
+    
+    .btn-primary, .btn-secondary, .btn-danger {
+        width: 100%;
+        text-align: center;
+    }
+    
+    .data-table th, .data-table td {
+        padding: 6px;
+        font-size: 11px;
+    }
+    
+    .pagination button {
+        padding: 6px 10px;
+        font-size: 12px;
+    }
+    
+    #map {
+        height: 250px;
+    }
+    
+    .chart-container {
+        height: 150px;
+    }
+    
+    .map-container h2 {
+        font-size: 18px;
+    }
+    
+    .map-info h3 {
+        font-size: 15px;
+    }
+}
+
+@media (max-width: 400px) {
+    .content-title {
+        font-size: 18px;
+    }
+    
+    .modal-header {
+        padding: 10px 15px;
+    }
+    
+    .modal-body {
+        padding: 10px;
+    }
+    
+    .modal-footer {
+        padding: 10px 15px;
+    }
+    
+    .input-group {
+        margin-bottom: 15px;
+    }
+    
+    .input-group input, .input-group textarea, .input-group select {
+        padding: 8px;
+    }
+    
+    .btn-primary, .btn-secondary, .btn-danger {
+        padding: 8px 15px;
+        font-size: 13px;
+    }
+    
+    .data-table th, .data-table td {
+        padding: 4px;
+        font-size: 10px;
+    }
+    
+    .pagination button {
+        padding: 4px 8px;
+        font-size: 11px;
+    }
+    
+    #map {
+        height: 200px;
+    }
+    
+    .chart-container {
+        height: 120px;
     }
 }

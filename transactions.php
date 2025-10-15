@@ -56,16 +56,16 @@ $machines = $pdo->query("SELECT dispenser_id, Description FROM dispenser ORDER B
                         <path d="M22 12h-4l2 2-2 2m-2-2h-4"></path>
                         <path d="M2 12h4l-2-2 2-2m2 2h4"></path>
                     </svg>
-                    Switch to Accounting and Calibration
+                    <span class="btn-text">Switch to Accounting and Calibration</span>
                 </a>
             </div>
             <div class="content-actions">
                 <div class="search-group">
-                    <label for="searchInput">Search:</label>
+                    <label for="searchInput" class="search-label">Search:</label>
                     <input type="text" id="searchInput" placeholder="Search transactions..." value="<?php echo htmlspecialchars($searchTerm); ?>">
                 </div>
                 <div class="rows-per-page">
-                    <label for="rowsPerPage">Rows per page:</label>
+                    <label for="rowsPerPage" class="rows-label">Rows per page:</label>
                     <select id="rowsPerPage">
                         <option value="5">5</option>
                         <option value="10" selected>10</option>
@@ -90,33 +90,37 @@ $machines = $pdo->query("SELECT dispenser_id, Description FROM dispenser ORDER B
             </div>
         </div>
 
-        <div class="table-container">
-            <table class="data-table" id="transactionsTable">
-                <thead>
-                    <tr>
-                        <th>ID</th>
-                        <th>Date & Time</th>
-                        <th>Machine</th>
-                        <th>Location</th>
-                        <th>Amount (ml)</th>
-                        <th>Water Type</th>
-                        <th>Coin Type</th>
-                    </tr>
-                </thead>
-                <tbody>
-                    <?php foreach ($transactions as $transaction): ?>
-                    <tr data-machine-id="<?php echo $transaction['dispenser_id']; ?>">
-                        <td><?php echo $transaction['transaction_id']; ?></td>
-                        <td class="transaction-time"><?php echo date('M j, Y h:i A', strtotime($transaction['DateAndTime'])); ?></td>
-                        <td><?php echo htmlspecialchars($transaction['machine_name']); ?></td>
-                        <td><?php echo htmlspecialchars($transaction['location_name']); ?></td>
-                        <td><?php echo $transaction['amount_dispensed']; ?>ml</td>
-                        <td><?php echo htmlspecialchars($transaction['water_type']); ?></td>
-                        <td><?php echo $transaction['coin_type']; ?></td>
-                    </tr>
-                    <?php endforeach; ?>
-                </tbody>
-            </table>
+                  <div class="table-container">
+            <div class="table-wrapper">
+                <table class="data-table" id="transactionsTable">
+                    <thead>
+                        <tr>
+                            <th class="id-col">ID</th>
+                            <th class="datetime-col">Date & Time</th>
+                            <th class="machine-col">Machine</th>
+                            <th class="location-col">Location</th>
+                            <th class="amount-col">Amount</th>
+                            <th class="water-col">Water Type</th>
+                            <th class="coin-col">Coin</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <?php foreach ($transactions as $transaction): ?>
+                        <tr data-machine-id="<?php echo $transaction['dispenser_id']; ?>">
+                            <td class="id-col"><?php echo $transaction['transaction_id']; ?></td>
+                            <td class="transaction-time datetime-col"><?php echo date('M j, Y h:i A', strtotime($transaction['DateAndTime'])); ?></td>
+                            <td class="machine-col"><?php echo htmlspecialchars($transaction['machine_name']); ?></td>
+                            <td class="location-col"><?php echo htmlspecialchars($transaction['location_name']); ?></td>
+                            <td class="amount-col"><?php echo $transaction['amount_dispensed']; ?>ml</td>
+                            <td class="water-col"><?php echo htmlspecialchars($transaction['water_type']); ?></td>
+                            <td class="coin-col"><?php echo $transaction['coin_type']; ?></td>
+                        </tr>
+                        <?php endforeach; ?>
+                    </tbody>
+                </table>
+            </div>
+        </div>
+        <div class="pagination-container">
             <div class="pagination" id="pagination"></div>
         </div>
     </div>
@@ -313,12 +317,12 @@ function refreshTransactions() {
                 const row = `
                     <tr data-machine-id="${transaction.dispenser_id}" class="${isNew ? 'new-transaction' : ''}">
                         <td>${transaction.transaction_id}</td>
-                        <td>${formattedDate}</td>
-                        <td>${transaction.machine_name}</td>
-                        <td>${transaction.location_name}</td>
-                        <td>${transaction.amount_dispensed}ml</td>
-                        <td>${transaction.water_type}</td>
-                        <td>${transaction.coin_type}</td>
+                        <td class="datetime-col">${formattedDate}</td>
+                        <td class="machine-col">${transaction.machine_name}</td>
+                        <td class="location-col">${transaction.location_name}</td>
+                        <td class="amount-col">${transaction.amount_dispensed}ml</td>
+                        <td class="water-col">${transaction.water_type}</td>
+                        <td class="coin-col">${transaction.coin_type}</td>
                     </tr>
                 `;
                 tbody.innerHTML += row;
@@ -360,6 +364,8 @@ document.addEventListener('DOMContentLoaded', function() {
         updateURL();
     }, 500);
     
+    document.getElementById('searchInput').addEventListener('input', debouncedSearch);
+    
     document.getElementById('rowsPerPage').addEventListener('change', function() {
         rowsPerPage = this.value;
         currentPage = 1;
@@ -374,8 +380,8 @@ document.addEventListener('DOMContentLoaded', function() {
         updateURL();
     });
     
-    // Auto-refresh every 2 seconds
-    setInterval(refreshTransactions, 2000);
+    // Auto-refresh every 1 seconds
+    setInterval(refreshTransactions, 1000);
 });
 </script>
 

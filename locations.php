@@ -205,11 +205,11 @@ $max_total_liters = $top_locations ? $top_locations[0]['total_liters'] : 1; // A
             <h1 class="content-title">Location Management</h1>
             <div class="content-actions">
                 <div class="search-group">
-                    <label for="searchInput">Search:</label>
+                    <label for="searchInput" class="search-label">Search:</label>
                     <input type="text" id="searchInput" placeholder="Search locations...">
                 </div>
                 <div class="rows-per-page">
-                    <label for="rowsPerPage">Rows per page:</label>
+                    <label for="rowsPerPage" class="rows-label">Rows per page:</label>
                     <select id="rowsPerPage">
                         <option value="5">5</option>
                         <option value="10" selected>10</option>
@@ -219,7 +219,7 @@ $max_total_liters = $top_locations ? $top_locations[0]['total_liters'] : 1; // A
                 </div>
                 <div>
                     <button class="btn-primary" id="addLocationBtn">
-                        <i class="fas fa-plus"></i> Add New Location
+                        <i class="fas fa-plus"></i> <span class="btn-text">Add New Location</span>
                     </button>
                 </div>
             </div>
@@ -227,48 +227,52 @@ $max_total_liters = $top_locations ? $top_locations[0]['total_liters'] : 1; // A
         
         <!-- Table Section -->
         <div class="table-container">
-            <table class="data-table" id="locationsTable">
-                <thead>
-                    <tr>
-                        <th>ID</th>
-                        <th>Location Name</th>
-                        <th>Address</th>
-                        <th>Latitude</th>
-                        <th>Longitude</th>
-                        <th>Total Dispensed (L)</th>
-                        <th>Actions</th>
-                    </tr>
-                </thead>
-                <tbody>
-                    <?php foreach($locations as $location): ?>
-                    <tr>
-                        <td><?php echo $location['location_id']; ?></td>
-                        <td><?php echo htmlspecialchars($location['location_name']); ?></td>
-                        <td><?php echo htmlspecialchars($location['address']); ?></td>
-                        <td><?php echo number_format($location['latitude'], 6); ?></td>
-                        <td><?php echo number_format($location['longitude'], 6); ?></td>
-                        <td><?php echo number_format($location['total_liters'], 2); ?></td>
-                        <td>
-                            <button class="btn-action edit" onclick="showEditModal(
-                                <?= $location['location_id'] ?>, 
-                                '<?= addslashes($location['location_name']) ?>', 
-                                '<?= addslashes($location['address']) ?>',
-                                '<?= addslashes($location['latitude'] ?? '') ?>',
-                                '<?= addslashes($location['longitude'] ?? '') ?>'
-                            )">
-                                <i class="fas fa-edit"></i>
-                            </button>
-                            <button class="btn-action delete" onclick="showDeleteModal(<?= $location['location_id'] ?>)">
-                                <i class="fas fa-trash"></i>
-                            </button>
-                            <button class="btn-action view-machines" onclick="showMachinesModal(<?= $location['location_id'] ?>, '<?= addslashes($location['location_name']) ?>')">
-                                <i class="fas fa-eye"></i>
-                            </button>
-                        </td>
-                    </tr>
-                    <?php endforeach; ?>
-                </tbody>
-            </table>
+            <div class="table-wrapper">
+                <table class="data-table" id="locationsTable">
+                    <thead>
+                        <tr>
+                            <th>ID</th>
+                            <th>Location Name</th>
+                            <th>Address</th>
+                            <th class="coord-col">Latitude</th>
+                            <th class="coord-col">Longitude</th>
+                            <th>Total Dispensed (L)</th>
+                            <th>Actions</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <?php foreach($locations as $location): ?>
+                        <tr>
+                            <td><?php echo $location['location_id']; ?></td>
+                            <td><?php echo htmlspecialchars($location['location_name']); ?></td>
+                            <td><?php echo htmlspecialchars($location['address']); ?></td>
+                            <td class="coord-col"><?php echo number_format($location['latitude'], 6); ?></td>
+                            <td class="coord-col"><?php echo number_format($location['longitude'], 6); ?></td>
+                            <td><?php echo number_format($location['total_liters'], 2); ?></td>
+                            <td>
+                                <div class="action-buttons">
+                                    <button class="btn-action edit" onclick="showEditModal(
+                                        <?= $location['location_id'] ?>, 
+                                        '<?= addslashes($location['location_name']) ?>', 
+                                        '<?= addslashes($location['address']) ?>',
+                                        '<?= addslashes($location['latitude'] ?? '') ?>',
+                                        '<?= addslashes($location['longitude'] ?? '') ?>'
+                                    )">
+                                        <i class="fas fa-edit"></i>
+                                    </button>
+                                    <button class="btn-action delete" onclick="showDeleteModal(<?= $location['location_id'] ?>)">
+                                        <i class="fas fa-trash"></i>
+                                    </button>
+                                    <button class="btn-action view-machines" onclick="showMachinesModal(<?= $location['location_id'] ?>, '<?= addslashes($location['location_name']) ?>')">
+                                        <i class="fas fa-eye"></i>
+                                    </button>
+                                </div>
+                            </td>
+                        </tr>
+                        <?php endforeach; ?>
+                    </tbody>
+                </table>
+            </div>
             <div class="pagination" id="pagination"></div>
         </div>
         
@@ -276,8 +280,8 @@ $max_total_liters = $top_locations ? $top_locations[0]['total_liters'] : 1; // A
         <div class="map-container">
             <h2>Water Dispenser Distribution Map</h2>
             <div class="map-controls">
-                <label><input type="checkbox" id="toggleHeatmap" checked> Show Heatmap</label>
-                <label><input type="checkbox" id="toggleMarkers" checked> Show Markers</label>
+                <label><input type="checkbox" id="toggleHeatmap" checked> <span class="control-text">Show Heatmap</span></label>
+                <label><input type="checkbox" id="toggleMarkers" checked> <span class="control-text">Show Markers</span></label>
             </div>
             <div id="map" style="height: 400px; margin-bottom: 20px; z-index: 1; position: relative;"></div>
             <!-- Heatmap Legend -->
@@ -294,9 +298,13 @@ $max_total_liters = $top_locations ? $top_locations[0]['total_liters'] : 1; // A
             <!-- Top Locations and Machines Charts -->
             <div class="map-info">
                 <h3>Top 5 Locations by Usage</h3>
-                <canvas id="topLocationsChart" style="max-height: 200px;"></canvas>
+                <div class="chart-container">
+                    <canvas id="topLocationsChart"></canvas>
+                </div>
                 <h3>Top 5 Machines by Usage</h3>
-                <canvas id="topMachinesChart" style="max-height: 200px;"></canvas>
+                <div class="chart-container">
+                    <canvas id="topMachinesChart"></canvas>
+                </div>
             </div>
         </div>
     </div>

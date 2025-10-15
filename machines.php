@@ -176,11 +176,11 @@ $showAddModal = isset($_GET['showAddModal']) && $_GET['showAddModal'] == 'true';
             <h1 class="content-title">Machine Management</h1>
             <div class="content-actions">
                 <div class="search-group">
-                    <label for="searchInput">Search:</label>
+                    <label for="searchInput" class="search-label">Search:</label>
                     <input type="text" id="searchInput" placeholder="Search machines...">
                 </div>
                 <div class="rows-per-page">
-                    <label for="rowsPerPage">Rows per page:</label>
+                    <label for="rowsPerPage" class="rows-label">Rows per page:</label>
                     <select id="rowsPerPage">
                         <option value="5">5</option>
                         <option value="10" selected>10</option>
@@ -190,58 +190,62 @@ $showAddModal = isset($_GET['showAddModal']) && $_GET['showAddModal'] == 'true';
                 </div>
                 <div>
                     <button class="btn-primary" id="addMachineBtn">
-                        <i class="fas fa-plus"></i> Add New Machine
+                        <i class="fas fa-plus"></i> <span class="btn-text">Add New Machine</span>
                     </button>
                 </div>
             </div>
         </div>
         
         <div class="table-container">
-            <table class="data-table" id="machinesTable">
-                <thead>
-                    <tr>
-                        <th>ID</th>
-                        <th>Description</th>
-                        <th>Capacity</th>
-                        <th>Water Level</th>
-                        <th>Location</th>
-                        <th>Status</th>
-                        <th>Actions</th>
-                    </tr>
-                </thead>
-                <tbody>
-                    <?php foreach ($machines as $machine): ?>
-                    <tr>
-                        <td><?= $machine['dispenser_id'] ?></td>
-                        <td><?= htmlspecialchars($machine['Description']) ?></td>
-                        <td><?= $machine['Capacity'] ?>L</td>
-                        <td><?= number_format($machine['water_level'] ?? 0, 1) ?>L</td>
-                        <td><?= htmlspecialchars($machine['location_name'] ?? 'Not Deployed') ?></td>
-                        <td>
-                            <button class="status-btn <?= $machine['Status'] == 1 ? 'enabled' : 'disabled' ?>" 
-                                    onclick="showStatusModal(<?= $machine['dispenser_id'] ?>, <?= $machine['Status'] ?? 0 ?>, '<?= addslashes($machine['location_name'] ?? 'Not Deployed') ?>')">
-                                <?= $machine['Status'] == 1 ? 'Enabled' : 'Disabled' ?>
-                            </button>
-                        </td>
-                        <td>
-                            <button class="btn-action edit" onclick="showEditModal(
-                                <?= $machine['dispenser_id'] ?>, 
-                                '<?= addslashes($machine['Description']) ?>', 
-                                <?= $machine['Capacity'] ?>, 
-                                <?= $machine['location_id'] ?? 'null' ?>, 
-                                <?= $machine['Status'] ?? 0 ?>,
-                                '<?= addslashes($machine['location_name'] ?? 'Not Deployed') ?>'
-                            )">
-                                <i class="fas fa-edit"></i>
-                            </button>
-                            <button class="btn-action delete" onclick="showDeleteModal(<?= $machine['dispenser_id'] ?>)">
-                                <i class="fas fa-trash"></i>
-                            </button>
-                        </td>
-                    </tr>
-                    <?php endforeach; ?>
-                </tbody>
-            </table>
+            <div class="table-wrapper">
+                <table class="data-table" id="machinesTable">
+                    <thead>
+                        <tr>
+                            <th>ID</th>
+                            <th>Description</th>
+                            <th class="capacity-col">Capacity</th>
+                            <th class="water-col">Water Level</th>
+                            <th class="location-col">Location</th>
+                            <th class="status-col">Status</th>
+                            <th class="actions-col">Actions</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <?php foreach ($machines as $machine): ?>
+                        <tr>
+                            <td><?= $machine['dispenser_id'] ?></td>
+                            <td><?= htmlspecialchars($machine['Description']) ?></td>
+                            <td class="capacity-col"><?= $machine['Capacity'] ?>L</td>
+                            <td class="water-col"><?= number_format($machine['water_level'] ?? 0, 1) ?>L</td>
+                            <td class="location-col"><?= htmlspecialchars($machine['location_name'] ?? 'Not Deployed') ?></td>
+                            <td class="status-col">
+                                <button class="status-btn <?= $machine['Status'] == 1 ? 'enabled' : 'disabled' ?>" 
+                                        onclick="showStatusModal(<?= $machine['dispenser_id'] ?>, <?= $machine['Status'] ?? 0 ?>, '<?= addslashes($machine['location_name'] ?? 'Not Deployed') ?>')">
+                                    <?= $machine['Status'] == 1 ? 'Enabled' : 'Disabled' ?>
+                                </button>
+                            </td>
+                            <td class="actions-col">
+                                <div class="action-buttons">
+                                    <button class="btn-action edit" onclick="showEditModal(
+                                        <?= $machine['dispenser_id'] ?>, 
+                                        '<?= addslashes($machine['Description']) ?>', 
+                                        <?= $machine['Capacity'] ?>, 
+                                        <?= $machine['location_id'] ?? 'null' ?>, 
+                                        <?= $machine['Status'] ?? 0 ?>,
+                                        '<?= addslashes($machine['location_name'] ?? 'Not Deployed') ?>'
+                                    )">
+                                        <i class="fas fa-edit"></i>
+                                    </button>
+                                    <button class="btn-action delete" onclick="showDeleteModal(<?= $machine['dispenser_id'] ?>)">
+                                        <i class="fas fa-trash"></i>
+                                    </button>
+                                </div>
+                            </td>
+                        </tr>
+                        <?php endforeach; ?>
+                    </tbody>
+                </table>
+            </div>
             <div class="pagination" id="pagination"></div>
         </div>
     </div>
