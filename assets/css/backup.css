@@ -1,68 +1,80 @@
-
+/* assets/css/backup.css */
 body {
     font-family: 'Inter', sans-serif;
     background-color: #F4F6F9;
     margin: 0;
     padding: 0;
+    overflow-x: hidden;
 }
 
 .content-area {
-    padding: 40px 0;
+    padding: 15px 0;
     min-height: 100vh;
+    width: 100%;
+    overflow-x: hidden;
 }
 
 .content-wrapper {
-    max-width: 1200px;
+    max-width: 100%;
     margin: 0 auto;
-    padding: 0 20px;
+    padding: 0 15px;
+    box-sizing: border-box;
 }
 
 .card {
     background: #FFFFFF;
-    border-radius: 12px;
-    box-shadow: 0 4px 20px rgba(0, 0, 0, 0.08);
-    padding: 24px;
-    margin-bottom: 24px;
+    border-radius: 10px;
+    box-shadow: 0 2px 12px rgba(0, 0, 0, 0.08);
+    padding: 20px;
+    margin-bottom: 20px;
     animation: fadeIn 0.5s ease-in;
+    width: 100%;
+    box-sizing: border-box;
 }
 
 .content-header {
-    text-align:  center;
+    text-align: center;
+    padding: 15px;
 }
 
 .content-title {
-    font-size: 28px;
+    font-size: 22px;
     font-weight: 700;
     color: #1A3C5E;
     margin: 0 0 8px;
+    line-height: 1.3;
 }
 
 .content-subtitle {
-    font-size: 16px;
+    font-size: 14px;
     color: #627D98;
+    line-height: 1.4;
 }
 
 .current-time h3, .manual-backup h3, .backup-settings h3, .backup-list h3 {
-    font-size: 20px;
+    font-size: 18px;
     font-weight: 600;
     color: #1A3C5E;
-    margin: 0 0 16px;
+    margin: 0 0 12px;
     display: flex;
     align-items: center;
     gap: 8px;
+    line-height: 1.3;
 }
 
 .current-time p, .no-backups {
-    font-size: 16px;
+    font-size: 14px;
     color: #2D4B73;
-    margin: 8px 0;
+    margin: 6px 0;
+    line-height: 1.4;
 }
 
 .notification-toast {
     position: fixed;
-    top: 20px;
-    right: 20px;
-    padding: 15px 25px;
+    top: 15px;
+    right: 15px;
+    left: 15px;
+    padding: 12px 18px;
     border-radius: 6px;
     color: white;
     font-weight: 500;
@@ -70,8 +82,9 @@ body {
     z-index: 1100;
     display: flex;
     flex-direction: column;
-    gap: 8px;
+    gap: 6px;
     animation: slideIn 0.3s, fadeOut 0.5s 2.5s forwards;
+    font-size: 14px;
 }
 
 .notification-toast.success {
@@ -87,7 +100,7 @@ body {
 }
 
 .notification-progress {
-    height: 4px;
+    height: 3px;
     background: rgba(255, 255, 255, 0.3);
     border-radius: 2px;
     animation: progress 3s linear forwards;
@@ -96,25 +109,29 @@ body {
 .btn {
     display: inline-flex;
     align-items: center;
-    gap: 8px;
+    justify-content: center;
+    gap: 6px;
     padding: 10px 16px;
-    border-radius: 8px;
-    font-size: 15px;
+    border-radius: 6px;
+    font-size: 14px;
     font-weight: 500;
     cursor: pointer;
     transition: transform 0.2s, box-shadow 0.2s;
-    max-width: 200px;
+    border: none;
+    min-height: 42px;
+    text-align: center;
+    width: 100%;
+    box-sizing: border-box;
 }
 
 .btn-primary {
     background: linear-gradient(135deg, #1E88E5, #42A5F5);
     color: #FFFFFF;
-    border: none;
 }
 
 .btn-primary:hover {
-    transform: translateY(-2px);
-    box-shadow: 0 4px 12px rgba(30, 136, 229, 0.3);
+    transform: translateY(-1px);
+    box-shadow: 0 2px 8px rgba(30, 136, 229, 0.3);
 }
 
 .btn-primary:active {
@@ -124,12 +141,11 @@ body {
 .btn-secondary {
     background: #627D98;
     color: #FFFFFF;
-    border: none;
 }
 
 .btn-secondary:hover {
-    transform: translateY(-2px);
-    box-shadow: 0 4px 12px rgba(98, 125, 152, 0.3);
+    transform: translateY(-1px);
+    box-shadow: 0 2px 8px rgba(98, 125, 152, 0.3);
 }
 
 .btn-secondary:active {
@@ -138,17 +154,17 @@ body {
 
 .backup-settings form {
     display: grid;
-    gap: 20px;
+    gap: 16px;
 }
 
 .input-group {
     display: flex;
     flex-direction: column;
-    gap: 8px;
+    gap: 6px;
 }
 
 .input-group label {
-    font-size: 15px;
+    font-size: 14px;
     font-weight: 500;
     color: #1A3C5E;
     display: flex;
@@ -157,38 +173,40 @@ body {
 }
 
 .input-group select, .input-group input.form-control {
-    padding: 12px;
+    padding: 10px;
     border: 1px solid #D1D9E6;
-    border-radius: 8px;
-    font-size: 15px;
+    border-radius: 6px;
+    font-size: 14px;
     transition: border-color 0.2s, box-shadow 0.2s;
+    width: 100%;
+    box-sizing: border-box;
 }
 
 .input-group select:focus, .input-group input.form-control:focus {
     outline: none;
     border-color: #1E88E5;
-    box-shadow: 0 0 0 3px rgba(30, 136, 229, 0.1);
-}
-
-.input-group select, .input-group input.form-control {
-    width: 200px;
+    box-shadow: 0 0 0 2px rgba(30, 136, 229, 0.1);
 }
 
 .backup-list .table-container {
     overflow-x: auto;
+    width: 100%;
+    -webkit-overflow-scrolling: touch;
 }
 
 .data-table {
     width: 100%;
     border-collapse: collapse;
-    margin-top: 16px;
+    margin-top: 12px;
+    min-width: 500px;
 }
 
 .data-table th, .data-table td {
-    padding: 14px;
+    padding: 12px;
     text-align: left;
-    font-size: 15px;
+    font-size: 14px;
     border-bottom: 1px solid #E8ECEF;
+    line-height: 1.4;
 }
 
 .data-table th {
@@ -208,34 +226,40 @@ body {
 .backup-type-auto {
     color: #4CAF50;
     font-weight: 500;
+    font-size: 13px;
 }
 
 .backup-type-manual {
     color: #1E88E5;
     font-weight: 500;
+    font-size: 13px;
 }
 
 .btn-action {
     display: inline-flex;
     align-items: center;
     justify-content: center;
-    width: 40px;
-    height: 40px;
-    border-radius: 8px;
-    margin-right: 8px;
+    width: 36px;
+    height: 36px;
+    border-radius: 6px;
+    margin-right: 6px;
     transition: background-color 0.2s, transform 0.2s;
     position: relative;
+    border: none;
+    cursor: pointer;
+    min-width: 36px;
+    min-height: 36px;
 }
 
 .btn-action:hover::after {
     content: attr(title);
     position: absolute;
-    top: -30px;
+    top: -28px;
     background: #2D4B73;
     color: #FFFFFF;
     padding: 4px 8px;
     border-radius: 4px;
-    font-size: 12px;
+    font-size: 11px;
     white-space: nowrap;
 }
 
@@ -270,44 +294,53 @@ body {
     align-items: center;
     justify-content: center;
     z-index: 2000;
+    padding: 15px;
+    box-sizing: border-box;
 }
 
 .modal-content {
     background: #FFFFFF;
-    border-radius: 12px;
-    padding: 24px;
-    max-width: 400px;
-    width: 90%;
+    border-radius: 10px;
+    padding: 20px;
+    max-width: 100%;
+    width: 100%;
     text-align: center;
+    box-sizing: border-box;
+    max-height: 90vh;
+    overflow-y: auto;
 }
 
 .modal-content h3 {
-    font-size: 20px;
+    font-size: 18px;
     font-weight: 600;
     color: #1A3C5E;
-    margin: 0 0 16px;
+    margin: 0 0 12px;
+    line-height: 1.3;
 }
 
 .modal-content p {
-    font-size: 16px;
+    font-size: 14px;
     color: #2D4B73;
-    margin: 0 0 24px;
+    margin: 0 0 20px;
+    word-break: break-word;
+    line-height: 1.4;
 }
 
 .modal-buttons {
     display: flex;
     justify-content: center;
-    gap: 16px;
+    gap: 12px;
+    flex-wrap: wrap;
 }
 
 .loading-spinner {
-    width: 40px;
-    height: 40px;
-    border: 4px solid #1E88E5;
-    border-top: 4px solid transparent;
+    width: 36px;
+    height: 36px;
+    border: 3px solid #1E88E5;
+    border-top: 3px solid transparent;
     border-radius: 50%;
     animation: spin 1s linear infinite;
-    margin: 0 auto 16px;
+    margin: 0 auto 12px;
 }
 
 @keyframes spin {
@@ -316,7 +349,7 @@ body {
 }
 
 @keyframes fadeIn {
-    from { opacity: 0; transform: translateY(10px); }
+    from { opacity: 0; transform: translateY(8px); }
     to { opacity: 1; transform: translateY(0); }
 }
 
@@ -335,27 +368,483 @@ body {
     to { width: 0; }
 }
 
+/* Mobile-first responsive design */
 @media (max-width: 768px) {
-    .content-wrapper {
-        padding: 0 15px;
+    .content-area {
+        padding: 10px 0;
     }
-
-    .input-group select,
-    .input-group input.form-control,
-    .btn-primary {
+    
+    .content-wrapper {
+        padding: 0 10px;
+    }
+    
+    .card {
+        padding: 15px;
+        margin-bottom: 15px;
+        border-radius: 8px;
+    }
+    
+    .content-header {
+        padding: 12px;
+    }
+    
+    .content-title {
+        font-size: 20px;
+        text-align: center;
+    }
+    
+    .content-subtitle {
+        font-size: 13px;
+        text-align: center;
+    }
+    
+    .current-time h3, .manual-backup h3, .backup-settings h3, .backup-list h3 {
+        font-size: 16px;
+        margin-bottom: 10px;
+        justify-content: center;
+        text-align: center;
+    }
+    
+    .current-time p, .no-backups {
+        font-size: 13px;
+        text-align: center;
+    }
+    
+    .input-group select, 
+    .input-group input.form-control {
+        width: 100%;
+        padding: 8px;
+        font-size: 13px;
+    }
+    
+    .btn {
+        width: 100%;
+        padding: 8px 12px;
+        font-size: 13px;
+        min-height: 40px;
+    }
+    
+    .backup-settings form {
+        gap: 12px;
+    }
+    
+    .notification-toast {
+        right: 10px;
+        left: 10px;
+        padding: 10px 15px;
+        font-size: 13px;
+    }
+    
+    /* Mobile table styles */
+    .backup-list .table-container {
+        overflow-x: hidden;
+    }
+    
+    .data-table {
+        min-width: auto;
+        display: block;
         width: 100%;
     }
-
-    .btn-primary {
-        max-width: none;
+    
+    .data-table thead {
+        display: none;
     }
-
-    .data-table th, .data-table td {
-        font-size: 14px;
+    
+    .data-table tbody {
+        display: block;
+        width: 100%;
+    }
+    
+    .data-table tr {
+        display: block;
+        margin-bottom: 12px;
+        background: #FFFFFF;
+        border-radius: 6px;
+        box-shadow: 0 2px 6px rgba(0, 0, 0, 0.1);
+        padding: 12px;
+        border: 1px solid #E8ECEF;
+        width: 100%;
+        box-sizing: border-box;
+    }
+    
+    .data-table td {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        padding: 8px 0;
+        border-bottom: 1px solid #F8F9FA;
+        text-align: right;
+        border: none;
+        width: 100%;
+        box-sizing: border-box;
+    }
+    
+    .data-table td:before {
+        content: attr(data-label);
+        font-weight: 600;
+        color: #1A3C5E;
+        text-align: left;
+        margin-right: 10px;
+        flex: 0 0 80px;
+        font-size: 13px;
+    }
+    
+    .data-table td:last-child {
+        border-bottom: none;
+        justify-content: flex-end;
+        gap: 6px;
+        padding-top: 10px;
+    }
+    
+    /* Add data labels for mobile */
+    .data-table td:nth-child(1):before { content: "Filename:"; }
+    .data-table td:nth-child(2):before { content: "Type:"; }
+    .data-table td:nth-child(3):before { content: "Date:"; }
+    .data-table td:nth-child(4):before { content: "Actions:"; }
+    
+    .btn-action {
+        width: 34px;
+        height: 34px;
+        min-width: 34px;
+        min-height: 34px;
+        margin-right: 4px;
+    }
+    
+    .btn-action i {
+        font-size: 12px;
+    }
+    
+    .modal {
         padding: 10px;
     }
-
+    
     .modal-content {
-        width: 95%;
+        padding: 15px;
+        max-width: 100%;
+    }
+    
+    .modal-content h3 {
+        font-size: 16px;
+    }
+    
+    .modal-content p {
+        font-size: 13px;
+    }
+    
+    .modal-buttons {
+        gap: 8px;
+    }
+    
+    .modal-buttons .btn {
+        flex: 1;
+        min-width: 110px;
+    }
+    
+    .loading-spinner {
+        width: 32px;
+        height: 32px;
+    }
+    
+    /* Filename truncation for mobile */
+    .data-table td:first-child {
+        word-break: break-all;
+        font-size: 12px;
+    }
+    
+    /* Backup type styling adjustments for mobile */
+    .backup-type-auto, .backup-type-manual {
+        font-size: 12px;
+        padding: 2px 6px;
+        border-radius: 4px;
+        background: rgba(76, 175, 80, 0.1);
+    }
+    
+    .backup-type-manual {
+        background: rgba(30, 136, 229, 0.1);
+    }
+    
+    /* Manual backup and settings card improvements */
+    .manual-backup, .backup-settings {
+        text-align: center;
+    }
+    
+    /* Input group improvements for mobile */
+    .input-group {
+        text-align: left;
+    }
+    
+    .input-group label {
+        justify-content: flex-start;
+    }
+    
+    /* Modal input improvements */
+    #confirmInputGroup {
+        text-align: left;
+    }
+    
+    #confirmInputGroup label {
+        justify-content: flex-start;
+        margin-bottom: 6px;
+        font-size: 13px;
+    }
+    
+    #confirmInput {
+        width: 100%;
+        box-sizing: border-box;
+        padding: 8px;
+        font-size: 13px;
+    }
+}
+
+@media (max-width: 480px) {
+    .content-wrapper {
+        padding: 0 8px;
+    }
+    
+    .content-area {
+        padding: 8px 0;
+    }
+    
+    .card {
+        padding: 12px;
+        margin-bottom: 12px;
+        border-radius: 6px;
+    }
+    
+    .content-header {
+        padding: 10px;
+    }
+    
+    .content-title {
+        font-size: 18px;
+    }
+    
+    .content-subtitle {
+        font-size: 12px;
+    }
+    
+    .current-time h3, .manual-backup h3, .backup-settings h3, .backup-list h3 {
+        font-size: 15px;
+    }
+    
+    .current-time p, .no-backups {
+        font-size: 12px;
+    }
+    
+    .input-group label {
+        font-size: 13px;
+    }
+    
+    .input-group select, 
+    .input-group input.form-control {
+        padding: 7px;
+        font-size: 12px;
+    }
+    
+    .btn {
+        padding: 7px 10px;
+        font-size: 12px;
+        min-height: 38px;
+    }
+    
+    .data-table tr {
+        padding: 10px;
+        margin-bottom: 10px;
+    }
+    
+    .data-table td {
+        padding: 6px 0;
+        font-size: 12px;
+    }
+    
+    .data-table td:before {
+        flex: 0 0 70px;
+        font-size: 12px;
+    }
+    
+    .btn-action {
+        width: 32px;
+        height: 32px;
+        min-width: 32px;
+        min-height: 32px;
+    }
+    
+    .btn-action i {
+        font-size: 11px;
+    }
+    
+    .notification-toast {
+        right: 8px;
+        left: 8px;
+        padding: 8px 12px;
+        font-size: 12px;
+    }
+    
+    .modal {
+        padding: 8px;
+    }
+    
+    .modal-content {
+        padding: 12px;
+    }
+    
+    .modal-content h3 {
+        font-size: 15px;
+        margin-bottom: 10px;
+    }
+    
+    .modal-content p {
+        font-size: 12px;
+        margin-bottom: 15px;
+    }
+    
+    .modal-buttons {
+        gap: 6px;
+    }
+    
+    .modal-buttons .btn {
+        min-width: 100px;
+        font-size: 12px;
+        padding: 6px 10px;
+    }
+    
+    .loading-spinner {
+        width: 28px;
+        height: 28px;
+        border-width: 2px;
+    }
+}
+
+@media (max-width: 360px) {
+    .content-title {
+        font-size: 16px;
+    }
+    
+    .content-subtitle {
+        font-size: 11px;
+    }
+    
+    .card {
+        padding: 10px;
+    }
+    
+    .data-table tr {
+        padding: 8px;
+        margin-bottom: 8px;
+    }
+    
+    .data-table td {
+        padding: 5px 0;
+        font-size: 11px;
+    }
+    
+    .data-table td:before {
+        flex: 0 0 60px;
+        font-size: 11px;
+    }
+    
+    .btn-action {
+        width: 30px;
+        height: 30px;
+        min-width: 30px;
+        min-height: 30px;
+    }
+    
+    .modal-content {
+        padding: 10px;
+    }
+    
+    .modal-buttons {
+        flex-direction: column;
+    }
+    
+    .modal-buttons .btn {
+        width: 100%;
+    }
+}
+
+/* Ensure no horizontal scrolling */
+html, body {
+    overflow-x: hidden;
+    max-width: 100%;
+}
+
+.content-area, 
+.content-wrapper, 
+.table-container {
+    max-width: 100%;
+    overflow-x: hidden;
+}
+
+/* Enhanced mobile table styling */
+.data-table td[data-label] {
+    display: flex;
+    flex-wrap: wrap;
+}
+
+.data-table td[data-label]:before {
+    flex: 0 0 80px;
+    text-align: left;
+}
+
+.data-table td[data-label] > * {
+    flex: 1;
+    text-align: right;
+}
+
+/* Improve touch targets */
+.btn, .btn-action {
+    -webkit-tap-highlight-color: transparent;
+}
+
+/* Ensure proper spacing in action cells */
+.data-table td:last-child {
+    gap: 6px;
+    padding-top: 8px;
+}
+
+/* Current time display improvements */
+.current-time {
+    text-align: center;
+}
+
+/* Ensure all content fits within viewport */
+* {
+    max-width: 100%;
+}
+
+/* Prevent text overflow */
+.content-title, .content-subtitle, .current-time p, .data-table td {
+    word-wrap: break-word;
+    overflow-wrap: break-word;
+}
+
+/* Optimize for very small screens */
+@media (max-width: 320px) {
+    .content-wrapper {
+        padding: 0 5px;
+    }
+    
+    .content-area {
+        padding: 5px 0;
+    }
+    
+    .card {
+        padding: 8px;
+        margin-bottom: 8px;
+    }
+    
+    .data-table td:before {
+        flex: 0 0 55px;
+        font-size: 10px;
+    }
+    
+    .data-table td {
+        font-size: 10px;
+    }
+    
+    .btn {
+        font-size: 11px;
+        padding: 6px 8px;
     }
 }
