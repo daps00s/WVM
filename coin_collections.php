@@ -160,7 +160,7 @@ $transaction_query = "
 if ($selected_dispenser) {
     $transaction_query .= " WHERE t.dispenser_id = :dispenser_id";
 }
-$transaction_query .= " ORDER BY t.DateAndTime DESC LIMIT 10";
+$transaction_query .= " ORDER BY t.DateAndTime DESC LIMIT 5";
 $stmt = $pdo->prepare($transaction_query);
 if ($selected_dispenser) {
     $stmt->execute(['dispenser_id' => $selected_dispenser]);
