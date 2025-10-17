@@ -39,7 +39,10 @@ $user = $pdo->query("SELECT * FROM userlogin WHERE user_id = ".$_SESSION['admin_
 <!-- User Profile Slide Panel -->
 <div class="user-profile-slide" id="userProfileSlide">
     <div class="profile-header">
-        <button class="profile-close-btn" id="closeProfileSlide"></button>
+        <h3 class="profile-panel-title">User Profile</h3>
+        <button class="profile-close-btn" id="closeProfileSlide">
+            <i class="fas fa-times"></i>
+        </button>
     </div>
     
     <?php if ($notification): ?>
@@ -49,7 +52,7 @@ $user = $pdo->query("SELECT * FROM userlogin WHERE user_id = ".$_SESSION['admin_
     <?php endif; ?>
     
     <div class="profile-content">
-        <div class="profile-avatar">
+        <div class="profile-avatar-large">
             <?php echo strtoupper(substr($user['username'], 0, 1)); ?>
         </div>
         
@@ -68,7 +71,9 @@ $user = $pdo->query("SELECT * FROM userlogin WHERE user_id = ".$_SESSION['admin_
                 <label>Role</label>
                 <p class="info-value profile-role"><?php echo $user['role']; ?></p>
             </div>
-            <button class="btn-primary" id="editProfileBtn">Edit Profile</button>
+            <button class="btn-primary" id="editProfileBtn">
+                <i class="fas fa-edit"></i> Edit Profile
+            </button>
         </div>
         
         <!-- Edit Form -->
@@ -91,8 +96,14 @@ $user = $pdo->query("SELECT * FROM userlogin WHERE user_id = ".$_SESSION['admin_
                        pattern=".{8,}" title="Minimum 8 characters">
                 <span class="input-error"></span>
             </div>
-            <button type="submit" name="update_profile" class="btn-primary">Save Changes</button>
-            <button type="button" class="btn-secondary" id="cancelEditBtn">Cancel</button>
+            <div class="form-actions">
+                <button type="submit" name="update_profile" class="btn-primary">
+                    <i class="fas fa-save"></i> Save Changes
+                </button>
+                <button type="button" class="btn-secondary" id="cancelEditBtn">
+                    <i class="fas fa-times"></i> Cancel
+                </button>
+            </div>
         </form>
     </div>
 </div>
@@ -121,20 +132,38 @@ $user = $pdo->query("SELECT * FROM userlogin WHERE user_id = ".$_SESSION['admin_
     padding: 20px;
     border-bottom: 1px solid #f0f2f5;
     position: relative;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    background: #f8fafc;
+}
+
+.profile-panel-title {
+    margin: 0;
+    font-size: 1.1rem;
+    color: #1e293b;
+    font-weight: 600;
 }
 
 .profile-close-btn {
-    position: absolute;
-    top: 20px;
-    left: 20px;
-    appearance: none;
-    border: none;
     background: none;
-    padding: 0;
-    margin: 0;
-    font-size: 16px;
-    line-height: 1;
+    border: none;
+    font-size: 18px;
+    color: #64748b;
     cursor: pointer;
+    padding: 8px;
+    border-radius: 4px;
+    transition: all 0.2s;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: 36px;
+    height: 36px;
+}
+
+.profile-close-btn:hover {
+    background: #e2e8f0;
+    color: #475569;
 }
 
 .profile-content {
@@ -146,18 +175,19 @@ $user = $pdo->query("SELECT * FROM userlogin WHERE user_id = ".$_SESSION['admin_
     align-items: center;
 }
 
-.profile-avatar {
-    width: 60px;
-    height: 60px;
-    background-color: var(--primary);
+.profile-avatar-large {
+    width: 80px;
+    height: 80px;
+    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
     color: white;
     border-radius: 50%;
     display: flex;
     align-items: center;
     justify-content: center;
     font-weight: 600;
-    font-size: 24px;
+    font-size: 32px;
     margin-bottom: 20px;
+    box-shadow: 0 4px 12px rgba(0,0,0,0.15);
 }
 
 .profile-title {
@@ -165,6 +195,7 @@ $user = $pdo->query("SELECT * FROM userlogin WHERE user_id = ".$_SESSION['admin_
     font-size: 1.25rem;
     color: #1e293b;
     text-align: center;
+    font-weight: 600;
 }
 
 .profile-view {
@@ -178,6 +209,10 @@ $user = $pdo->query("SELECT * FROM userlogin WHERE user_id = ".$_SESSION['admin_
     display: flex;
     flex-direction: column;
     gap: 6px;
+    padding: 12px;
+    background: #f8fafc;
+    border-radius: 8px;
+    border: 1px solid #e2e8f0;
 }
 
 .info-group label {
@@ -190,13 +225,17 @@ $user = $pdo->query("SELECT * FROM userlogin WHERE user_id = ".$_SESSION['admin_
     font-size: 0.875rem;
     color: #1e293b;
     margin: 0;
+    font-weight: 500;
 }
 
 .profile-role {
     padding: 6px 10px;
-    background: #f8fafc;
+    background: #e0f2fe;
+    color: #0369a1;
     border-radius: 4px;
     display: inline-block;
+    font-size: 0.75rem;
+    font-weight: 600;
 }
 
 .profile-form {
@@ -219,17 +258,18 @@ $user = $pdo->query("SELECT * FROM userlogin WHERE user_id = ".$_SESSION['admin_
 }
 
 .input-group input {
-    padding: 8px 12px;
+    padding: 10px 12px;
     border: 1px solid #e2e8f0;
     border-radius: 6px;
     font-size: 0.875rem;
     transition: all 0.2s;
+    background: white;
 }
 
 .input-group input:focus {
     outline: none;
-    border-color: #818cf8;
-    box-shadow: 0 0 0 2px rgba(129, 140, 248, 0.2);
+    border-color: #3b82f6;
+    box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.1);
 }
 
 .input-error {
@@ -239,66 +279,164 @@ $user = $pdo->query("SELECT * FROM userlogin WHERE user_id = ".$_SESSION['admin_
 }
 
 .btn-primary {
-    padding: 10px;
-    background:rgb(0, 71, 236);
+    padding: 12px 16px;
+    background: #3b82f6;
     color: white;
     border: none;
     border-radius: 6px;
     font-size: 0.875rem;
     font-weight: 500;
     cursor: pointer;
-    transition: background 0.2s;
+    transition: all 0.2s;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 8px;
+    width: 100%;
 }
 
 .btn-primary:hover {
-    background:rgb(0, 70, 248);
+    background: #2563eb;
+    transform: translateY(-1px);
+    box-shadow: 0 4px 12px rgba(59, 130, 246, 0.3);
 }
 
 .btn-secondary {
-    padding: 10px;
-    background: #e2e8f0;
-    color: #1e293b;
-    border: none;
+    padding: 12px 16px;
+    background: #f1f5f9;
+    color: #475569;
+    border: 1px solid #e2e8f0;
     border-radius: 6px;
     font-size: 0.875rem;
     font-weight: 500;
     cursor: pointer;
-    transition: background 0.2s;
+    transition: all 0.2s;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 8px;
+    width: 100%;
 }
 
 .btn-secondary:hover {
-    background: #cbd5e1;
+    background: #e2e8f0;
+    transform: translateY(-1px);
+}
+
+.form-actions {
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+    margin-top: 10px;
 }
 
 .notification-toast {
     position: fixed;
     top: 20px;
     right: 20px;
-    padding: 15px 25px;
-    border-radius: 6px;
+    padding: 15px 20px;
+    border-radius: 8px;
     color: white;
     font-weight: 500;
-    box-shadow: 0 4px 10px rgba(0,0,0,0.15);
+    box-shadow: 0 4px 12px rgba(0,0,0,0.15);
     z-index: 1100;
     animation: slideIn 0.3s, fadeOut 0.5s 2.5s forwards;
+    max-width: 300px;
 }
 
 .notification-toast.success {
-    background-color: #2ecc71;
+    background: linear-gradient(135deg, #10b981 0%, #059669 100%);
 }
 
 .notification-toast.error {
-    background-color: #e74c3c;
+    background: linear-gradient(135deg, #ef4444 0%, #dc2626 100%);
 }
 
 @keyframes slideIn {
-    from { transform: translateX(100%); opacity: 0; }
-    to { transform: translateX(0); opacity: 1; }
+    from { 
+        transform: translateX(100%); 
+        opacity: 0; 
+    }
+    to { 
+        transform: translateX(0); 
+        opacity: 1; 
+    }
 }
 
 @keyframes fadeOut {
     from { opacity: 1; }
     to { opacity: 0; }
+}
+
+/* Mobile Responsive */
+@media (max-width: 768px) {
+    .user-profile-slide {
+        width: 100%;
+        right: -100%;
+    }
+    
+    .profile-content {
+        padding: 15px;
+    }
+    
+    .profile-avatar-large {
+        width: 70px;
+        height: 70px;
+        font-size: 28px;
+    }
+    
+    .form-actions {
+        flex-direction: column;
+    }
+}
+
+/* Dark mode support */
+@media (prefers-color-scheme: dark) {
+    .user-profile-slide {
+        background: #1e293b;
+        color: white;
+    }
+    
+    .profile-header {
+        background: #334155;
+        border-bottom-color: #475569;
+    }
+    
+    .profile-panel-title,
+    .profile-title,
+    .info-value {
+        color: #f1f5f9;
+    }
+    
+    .info-group {
+        background: #334155;
+        border-color: #475569;
+    }
+    
+    .info-group label {
+        color: #cbd5e1;
+    }
+    
+    .input-group input {
+        background: #334155;
+        border-color: #475569;
+        color: white;
+    }
+    
+    .input-group input:focus {
+        border-color: #60a5fa;
+        box-shadow: 0 0 0 3px rgba(96, 165, 250, 0.1);
+    }
+    
+    .btn-secondary {
+        background: #475569;
+        border-color: #64748b;
+        color: #e2e8f0;
+    }
+    
+    .btn-secondary:hover {
+        background: #64748b;
+    }
 }
 </style>
 
@@ -323,8 +461,12 @@ document.addEventListener('DOMContentLoaded', function() {
         toast.className = `notification-toast ${type}`;
         toast.textContent = message;
         document.body.appendChild(toast);
+        
         setTimeout(() => {
-            toast.style.display = 'none';
+            toast.style.opacity = '0';
+            setTimeout(() => {
+                toast.remove();
+            }, 300);
         }, 3000);
     }
 
@@ -334,8 +476,10 @@ document.addEventListener('DOMContentLoaded', function() {
             const error = this.nextElementSibling;
             if (this.validity.valid || !this.value) {
                 error.textContent = '';
+                this.style.borderColor = '#e2e8f0';
             } else {
                 error.textContent = this.title;
+                this.style.borderColor = '#ef4444';
             }
         });
     });
@@ -354,6 +498,7 @@ document.addEventListener('DOMContentLoaded', function() {
         inputs.forEach(input => {
             const error = input.nextElementSibling;
             error.textContent = '';
+            input.style.borderColor = '#e2e8f0';
         });
         showNotification('Edit canceled.');
     });
@@ -373,13 +518,20 @@ document.addEventListener('DOMContentLoaded', function() {
                     inputs.forEach(input => {
                         const error = input.nextElementSibling;
                         error.textContent = '';
+                        input.style.borderColor = '#e2e8f0';
                     });
-                    showNotification('Edit canceled and profile panel closed.');
                 }
             }
         });
     });
 
     observer.observe(profileSlide, { attributes: true });
+
+    // Close on escape key
+    document.addEventListener('keydown', function(event) {
+        if (event.key === 'Escape' && profileSlide.classList.contains('open')) {
+            profileSlide.classList.remove('open');
+        }
+    });
 });
 </script>

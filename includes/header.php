@@ -94,6 +94,7 @@ $pageTitle = $pageTitle ?? 'Dashboard';
         <script>
 document.addEventListener('DOMContentLoaded', function() {
     const userName = document.getElementById('userName');
+    const userAvatar = document.getElementById('userAvatar');
     const profileSlide = document.getElementById('userProfileSlide');
     const closeBtn = document.getElementById('closeProfileSlide');
     const menuToggle = document.getElementById('menuToggle');
@@ -104,10 +105,20 @@ document.addEventListener('DOMContentLoaded', function() {
         sidebar.classList.toggle('active');
     });
     
-    // Open slide panel when username is clicked
+    // Open slide panel when username OR avatar is clicked
+    function openProfileSlide() {
+        profileSlide.classList.add('open');
+    }
+    
     userName.addEventListener('click', function(event) {
         event.stopPropagation();
-        profileSlide.classList.add('open');
+        openProfileSlide();
+    });
+    
+    // Make user avatar clickable
+    userAvatar.addEventListener('click', function(event) {
+        event.stopPropagation();
+        openProfileSlide();
     });
     
     // Close slide panel when close button is clicked
@@ -117,7 +128,7 @@ document.addEventListener('DOMContentLoaded', function() {
     
     // Close when clicking outside the slide panel
     document.addEventListener('click', function(event) {
-        if (!profileSlide.contains(event.target) && event.target !== userName) {
+        if (!profileSlide.contains(event.target) && event.target !== userName && event.target !== userAvatar) {
             profileSlide.classList.remove('open');
         }
     });
@@ -134,9 +145,32 @@ document.addEventListener('DOMContentLoaded', function() {
     }
 
     // Force menu toggle functionality
-document.getElementById('menuToggle').addEventListener('click', function() {
-    document.getElementById('sidebar').classList.toggle('active');
-});
+    document.getElementById('menuToggle').addEventListener('click', function() {
+        document.getElementById('sidebar').classList.toggle('active');
+    });
+
+    // Add hover effect to user avatar
+    userAvatar.style.cursor = 'pointer';
+    userAvatar.style.transition = 'all 0.2s ease';
+    
+    userAvatar.addEventListener('mouseenter', function() {
+        this.style.transform = 'scale(1.1)';
+        this.style.boxShadow = '0 4px 12px rgba(0, 0, 0, 0.15)';
+    });
+    
+    userAvatar.addEventListener('mouseleave', function() {
+        this.style.transform = 'scale(1)';
+        this.style.boxShadow = 'none';
+    });
+
+    // Add click effect to user avatar
+    userAvatar.addEventListener('mousedown', function() {
+        this.style.transform = 'scale(0.95)';
+    });
+    
+    userAvatar.addEventListener('mouseup', function() {
+        this.style.transform = 'scale(1.1)';
+    });
 
 });
 </script>
