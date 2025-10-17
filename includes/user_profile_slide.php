@@ -230,7 +230,7 @@ $user = $pdo->query("SELECT * FROM userlogin WHERE user_id = ".$_SESSION['admin_
 
 .profile-role {
     padding: 6px 10px;
-    background: #e0f2fe;
+    background: #165783ff;
     color: #0369a1;
     border-radius: 4px;
     display: inline-block;
