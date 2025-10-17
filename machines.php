@@ -186,6 +186,7 @@ $showAddModal = isset($_GET['showAddModal']) && $_GET['showAddModal'] == 'true';
                         <option value="10" selected>10</option>
                         <option value="20">20</option>
                         <option value="30">30</option>
+                        <option value="all">All</option>
                     </select>
                 </div>
                 <div>
@@ -246,7 +247,13 @@ $showAddModal = isset($_GET['showAddModal']) && $_GET['showAddModal'] == 'true';
                     </tbody>
                 </table>
             </div>
-            <div class="pagination" id="pagination"></div>
+        </div>
+        <div class="pagination-container">
+            <div class="pagination" id="pagination">
+                <button id="prevBtn" class="pagination-btn">Previous</button>
+                <span id="pageIndicator" class="page-indicator">1/1</span>
+                <button id="nextBtn" class="pagination-btn">Next</button>
+            </div>
         </div>
     </div>
 </div>
@@ -410,6 +417,7 @@ $showAddModal = isset($_GET['showAddModal']) && $_GET['showAddModal'] == 'true';
 let currentPage = 1;
 let rowsPerPage = 10;
 let searchTerm = '';
+let totalPages = 1;
 
 // Filter and paginate table
 function filterAndPaginate() {
@@ -442,64 +450,82 @@ function filterAndPaginate() {
     
     // Calculate pagination
     const totalRows = filteredRows.length;
-    const totalPages = Math.ceil(totalRows / rowsPerPage);
+    totalPages = rowsPerPage === 'all' ? 1 : Math.ceil(totalRows / parseInt(rowsPerPage));
     currentPage = Math.min(currentPage, Math.max(1, totalPages));
     
     // Show/hide rows based on current page
     filteredRows.forEach((row, index) => {
-        const start = (currentPage - 1) * rowsPerPage;
-        const end = start + rowsPerPage;
-        row.style.display = (index >= start && index < end) ? '' : 'none';
+        if (rowsPerPage === 'all') {
+            row.style.display = '';
+        } else {
+            const start = (currentPage - 1) * parseInt(rowsPerPage);
+            const end = start + parseInt(rowsPerPage);
+            row.style.display = (index >= start && index < end) ? '' : 'none';
+        }
     });
     
     // Update pagination controls
-    updatePagination(totalPages);
+    updatePagination();
 }
 
 // Update pagination controls
-function updatePagination(totalPages) {
-    const pagination = document.getElementById('pagination');
-    pagination.innerHTML = '';
+function updatePagination() {
+    const prevBtn = document.getElementById('prevBtn');
+    const nextBtn = document.getElementById('nextBtn');
+    const pageIndicator = document.getElementById('pageIndicator');
     
-    // Previous button
-    const prevButton = document.createElement('button');
-    prevButton.textContent = 'Previous';
-    prevButton.disabled = currentPage === 1;
-    prevButton.addEventListener('click', () => {
+    if (rowsPerPage === 'all') {
+        pageIndicator.textContent = 'Showing All';
+        prevBtn.style.display = 'none';
+        nextBtn.style.display = 'none';
+        return;
+    }
+    
+    prevBtn.style.display = 'inline-block';
+    nextBtn.style.display = 'inline-block';
+    
+    // Update page indicator
+    pageIndicator.textContent = `${currentPage}/${totalPages}`;
+    
+    // Update button states
+    prevBtn.disabled = currentPage === 1;
+    nextBtn.disabled = currentPage === totalPages || totalPages === 0;
+    
+    // Update button styles based on state
+    if (prevBtn.disabled) {
+        prevBtn.style.opacity = '0.5';
+        prevBtn.style.cursor = 'not-allowed';
+    } else {
+        prevBtn.style.opacity = '1';
+        prevBtn.style.cursor = 'pointer';
+    }
+    
+    if (nextBtn.disabled) {
+        nextBtn.style.opacity = '0.5';
+        nextBtn.style.cursor = 'not-allowed';
+    } else {
+        nextBtn.style.opacity = '1';
+        nextBtn.style.cursor = 'pointer';
+    }
+}
+
+// Initialize page
+document.addEventListener('DOMContentLoaded', function() {
+    // Set up pagination button event listeners
+    document.getElementById('prevBtn').addEventListener('click', function() {
         if (currentPage > 1) {
             currentPage--;
             filterAndPaginate();
         }
     });
-    pagination.appendChild(prevButton);
     
-    // Page numbers
-    for (let i = 1; i <= totalPages; i++) {
-        const pageButton = document.createElement('button');
-        pageButton.textContent = i;
-        pageButton.className = i === currentPage ? 'active' : '';
-        pageButton.addEventListener('click', () => {
-            currentPage = i;
-            filterAndPaginate();
-        });
-        pagination.appendChild(pageButton);
-    }
-    
-    // Next button
-    const nextButton = document.createElement('button');
-    nextButton.textContent = 'Next';
-    nextButton.disabled = currentPage === totalPages || totalPages === 0;
-    nextButton.addEventListener('click', () => {
+    document.getElementById('nextBtn').addEventListener('click', function() {
         if (currentPage < totalPages) {
             currentPage++;
             filterAndPaginate();
         }
     });
-    pagination.appendChild(nextButton);
-}
-
-// Initialize page
-document.addEventListener('DOMContentLoaded', function() {
+    
     // Initialize table
     filterAndPaginate();
     
@@ -512,7 +538,7 @@ document.addEventListener('DOMContentLoaded', function() {
     
     // Rows per page event listener
     document.getElementById('rowsPerPage').addEventListener('change', function() {
-        rowsPerPage = parseInt(this.value);
+        rowsPerPage = this.value;
         currentPage = 1;
         filterAndPaginate();
     });
