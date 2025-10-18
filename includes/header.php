@@ -88,7 +88,7 @@ $transaction_page_url = ($current_page === 'accounting_and_calibration.php') ? '
                 </li>
                 <li class="menu-item">
                     <a href="forecast.php" class="menu-link <?php echo getActiveClass('forecast.php'); ?>">
-                        <i class="fas fa-chart-line"></i> Trends & Forecasts
+                        <i class="fas fa-chart-line"></i>Forecasts & Trends
                     </a>
                 </li>
                 <li class="menu-item">
