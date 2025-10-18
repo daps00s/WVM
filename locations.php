@@ -52,36 +52,6 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     }
 }
 
-// Insert additional transaction data for forecast calculation (simulating multiple days)
-$additional_transactions = [
-    ['amount_dispensed' => 2.5, 'DateAndTime' => '2025-07-15 10:00:00', 'coin_type' => '5 Peso', 'dispenser_id' => 27],
-    ['amount_dispensed' => 5.0, 'DateAndTime' => '2025-07-15 12:00:00', 'coin_type' => '10 Peso', 'dispenser_id' => 27],
-    ['amount_dispensed' => 0.5, 'DateAndTime' => '2025-07-16 09:00:00', 'coin_type' => '1 Peso', 'dispenser_id' => 27],
-    ['amount_dispensed' => 2.5, 'DateAndTime' => '2025-07-16 15:00:00', 'coin_type' => '5 Peso', 'dispenser_id' => 27],
-    ['amount_dispensed' => 5.0, 'DateAndTime' => '2025-07-17 11:00:00', 'coin_type' => '10 Peso', 'dispenser_id' => 27],
-    ['amount_dispensed' => 1.0, 'DateAndTime' => '2025-07-18 14:00:00', 'coin_type' => '1 Peso', 'dispenser_id' => 27],
-    ['amount_dispensed' => 2.5, 'DateAndTime' => '2025-07-19 16:00:00', 'coin_type' => '5 Peso', 'dispenser_id' => 27],
-    ['amount_dispensed' => 5.0, 'DateAndTime' => '2025-07-20 10:00:00', 'coin_type' => '10 Peso', 'dispenser_id' => 27],
-    ['amount_dispensed' => 0.5, 'DateAndTime' => '2025-07-21 12:00:00', 'coin_type' => '1 Peso', 'dispenser_id' => 27],
-    ['amount_dispensed' => 2.5, 'DateAndTime' => '2025-07-22 13:00:00', 'coin_type' => '5 Peso', 'dispenser_id' => 27],
-    ['amount_dispensed' => 5.0, 'DateAndTime' => '2025-08-01 11:00:00', 'coin_type' => '10 Peso', 'dispenser_id' => 27],
-    ['amount_dispensed' => 1.0, 'DateAndTime' => '2025-08-02 14:00:00', 'coin_type' => '1 Peso', 'dispenser_id' => 27],
-    ['amount_dispensed' => 2.5, 'DateAndTime' => '2025-08-03 16:00:00', 'coin_type' => '5 Peso', 'dispenser_id' => 27],
-    ['amount_dispensed' => 5.0, 'DateAndTime' => '2025-08-04 10:00:00', 'coin_type' => '10 Peso', 'dispenser_id' => 27],
-    ['amount_dispensed' => 0.5, 'DateAndTime' => '2025-08-05 12:00:00', 'coin_type' => '1 Peso', 'dispenser_id' => 27],
-    ['amount_dispensed' => 2.5, 'DateAndTime' => '2025-08-06 13:00:00', 'coin_type' => '5 Peso', 'dispenser_id' => 27],
-    ['amount_dispensed' => 5.0, 'DateAndTime' => '2025-08-07 11:00:00', 'coin_type' => '10 Peso', 'dispenser_id' => 27],
-    ['amount_dispensed' => 1.0, 'DateAndTime' => '2025-08-08 14:00:00', 'coin_type' => '1 Peso', 'dispenser_id' => 27],
-    ['amount_dispensed' => 2.5, 'DateAndTime' => '2025-08-09 16:00:00', 'coin_type' => '5 Peso', 'dispenser_id' => 27],
-    ['amount_dispensed' => 5.0, 'DateAndTime' => '2025-08-10 10:00:00', 'coin_type' => '10 Peso', 'dispenser_id' => 27],
-];
-
-// Insert additional transactions into the database
-$stmt = $pdo->prepare("INSERT INTO transaction (amount_dispensed, DateAndTime, coin_type, dispenser_id) VALUES (?, ?, ?, ?)");
-foreach ($additional_transactions as $trans) {
-    $stmt->execute([$trans['amount_dispensed'], $trans['DateAndTime'], $trans['coin_type'], $trans['dispenser_id']]);
-}
-
 // Fetch locations with machine count and total liters for table
 $locations = $pdo->query("SELECT l.*, COUNT(dl.dispenser_id) as machine_count, 
                           COALESCE(SUM(t.amount_dispensed), 0) as total_liters
