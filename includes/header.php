@@ -76,7 +76,7 @@ $pageTitle = $pageTitle ?? 'Dashboard';
                 </li>
                 <li class="menu-item">
                     <a href="forecast.php" class="menu-link <?php echo getActiveClass('forecast.php'); ?>">
-                        <i class="fas fa-chart-line"></i> Trends
+                        <i class="fas fa-chart-line"></i> Trends & Forecasts
                     </a>
                 </li>
                 <li class="menu-item">
