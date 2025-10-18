@@ -21,6 +21,14 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         } else {
             $notification = 'error|Failed to update location.';
         }
+    } elseif (isset($_POST['move_location'])) {
+        // Move existing location to new coordinates
+        $stmt = $pdo->prepare("UPDATE location SET latitude = ?, longitude = ? WHERE location_id = ?");
+        if ($stmt->execute([$_POST['latitude'], $_POST['longitude'], $_POST['location_id']])) {
+            $notification = 'success|Location successfully moved!';
+        } else {
+            $notification = 'error|Failed to move location.';
+        }
     } elseif (isset($_POST['confirm_delete'])) {
         // Delete location
         try {
@@ -379,6 +387,47 @@ $max_total_liters = $top_locations ? $top_locations[0]['total_liters'] : 1; // A
     </div>
 </div>
 
+<!-- Move Location Modal -->
+<div class="modal" id="moveLocationModal">
+    <div class="modal-content">
+        <div class="modal-header">
+            <h2>Move Location</h2>
+            <span class="close-modal">×</span>
+        </div>
+        <form method="POST">
+            <div class="modal-body">
+                <input type="hidden" name="location_id" id="move_location_id">
+                <input type="hidden" name="latitude" id="move_latitude">
+                <input type="hidden" name="longitude" id="move_longitude">
+                <div class="input-group">
+                    <label for="move_location_select">Select Location to Move</label>
+                    <select id="move_location_select" name="location_id" required>
+                        <option value="">-- Select Location --</option>
+                        <?php foreach($locations as $location): ?>
+                        <option value="<?= $location['location_id'] ?>" data-address="<?= htmlspecialchars($location['address']) ?>">
+                            <?= htmlspecialchars($location['location_name']) ?>
+                        </option>
+                        <?php endforeach; ?>
+                    </select>
+                </div>
+                <div class="input-group">
+                    <label for="move_address_display">Current Address</label>
+                    <textarea id="move_address_display" rows="3" readonly></textarea>
+                </div>
+                <div class="input-group">
+                    <label for="move_new_coords">New Coordinates</label>
+                    <input type="text" id="move_new_coords" readonly>
+                </div>
+                <p class="help-text">The selected location will be moved to the clicked coordinates on the map.</p>
+            </div>
+            <div class="modal-footer">
+                <button type="submit" name="move_location" class="btn-primary">Move Location</button>
+                <button type="button" class="btn-secondary" onclick="closeModal('moveLocationModal')">Cancel</button>
+            </div>
+        </form>
+    </div>
+</div>
+
 <!-- Delete Confirmation Modal -->
 <div class="modal" id="deleteLocationModal">
     <div class="modal-content">
@@ -514,6 +563,8 @@ function getMarkerColor(totalLiters) {
 
 // Initialize Leaflet Map
 let map, heatLayer, markersLayer;
+let currentClickLat, currentClickLng;
+
 function initMap() {
     map = L.map('map', {
         center: [15.63954742, 120.41917920],
@@ -587,12 +638,13 @@ function initMap() {
     });
 
     map.on('click', function(e) {
-        const lat = e.latlng.lat.toFixed(6);
-        const lng = e.latlng.lng.toFixed(6);
+        currentClickLat = e.latlng.lat.toFixed(6);
+        currentClickLng = e.latlng.lng.toFixed(6);
         const popupContent = `
-            Latitude: ${lat}<br>
-            Longitude: ${lng}<br>
-            <button class="btn-primary" onclick="openAddLocationModal(${lat}, ${lng})">Create Here</button>
+            Latitude: ${currentClickLat}<br>
+            Longitude: ${currentClickLng}<br>
+            <button class="btn-primary" onclick="openAddLocationModal(${currentClickLat}, ${currentClickLng})">Create Here</button>
+            <button class="btn-secondary" onclick="openMoveLocationModal(${currentClickLat}, ${currentClickLng})">Move Location</button>
         `;
         L.popup()
             .setLatLng(e.latlng)
@@ -611,6 +663,25 @@ function openAddLocationModal(lat, lng) {
     
     latInput.value = lat;
     lngInput.value = lng;
+    
+    modal.style.display = 'block';
+    
+    map.closePopup();
+}
+
+function openMoveLocationModal(lat, lng) {
+    const modal = document.getElementById('moveLocationModal');
+    const latInput = document.getElementById('move_latitude');
+    const lngInput = document.getElementById('move_longitude');
+    const coordsDisplay = document.getElementById('move_new_coords');
+    
+    latInput.value = lat;
+    lngInput.value = lng;
+    coordsDisplay.value = `${lat}, ${lng}`;
+    
+    // Reset the form
+    document.getElementById('move_location_select').value = '';
+    document.getElementById('move_address_display').value = '';
     
     modal.style.display = 'block';
     
@@ -764,6 +835,13 @@ document.addEventListener('DOMContentLoaded', function() {
         document.getElementById('add_latitude').value = '';
         document.getElementById('add_longitude').value = '';
         document.getElementById('addLocationModal').style.display = 'block';
+    });
+    
+    // Add event listener for location selection in move modal
+    document.getElementById('move_location_select').addEventListener('change', function() {
+        const selectedOption = this.options[this.selectedIndex];
+        const address = selectedOption.getAttribute('data-address') || '';
+        document.getElementById('move_address_display').value = address;
     });
     
     const toast = document.querySelector('.notification-toast');
