@@ -5,9 +5,10 @@ $pageTitle = 'Accounting and Calibration Dashboard';
 require_once 'includes/header.php';
 
 // Add database connection
-require_once 'includes/db_connect.php';
+require_once 'includes/db_connect.php'; // Add this line - adjust path as needed
 
 // If your database connection is in header.php but uses different variable name, adjust accordingly
+// If $conn is not defined, try these alternatives:
 if (!isset($conn)) {
     // Try common database connection variable names
     if (isset($db)) $conn = $db;
@@ -207,191 +208,15 @@ if ($start_date > $end_date) {
 }
 ?>
 
-<style>
-/* Accounting and Calibration Specific Styles */
-.accounting-container {
-    padding: 20px;
-    margin-left: 0;
-    width: 100%;
-    min-height: calc(100vh - 70px);
-    background-color: #f8f9fa;
-}
-
-.discrepancy { 
-    background-color: #fee2e2; 
-}
-.table-container { 
-    max-height: 400px; 
-    overflow-y: auto; 
-    border: 1px solid #e5e7eb;
-    border-radius: 8px;
-}
-.sticky-header { 
-    position: sticky; 
-    top: 0; 
-    z-index: 10; 
-    background-color: #f3f4f6;
-}
-.transaction-row:hover { 
-    cursor: pointer; 
-    background-color: #f1f5f9; 
-}
-.modal { 
-    display: none; 
-    position: fixed; 
-    z-index: 1050; 
-    left: 0; 
-    top: 0; 
-    width: 100%; 
-    height: 100%; 
-    overflow: auto; 
-    background-color: rgba(0,0,0,0.4); 
-}
-.modal-content { 
-    background-color: #fefefe; 
-    margin: 10% auto; 
-    padding: 20px; 
-    border: 1px solid #888; 
-    width: 90%; 
-    max-width: 500px; 
-    border-radius: 8px; 
-    box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
-}
-.modal-close { 
-    color: #aaa; 
-    float: right; 
-    font-size: 28px; 
-    font-weight: bold; 
-    cursor: pointer; 
-    line-height: 1;
-}
-.modal-close:hover { 
-    color: #000; 
-}
-
-/* Tailwind-like utility classes */
-.max-w-7xl { max-width: 80rem; }
-.mx-auto { margin-left: auto; margin-right: auto; }
-.px-4 { padding-left: 1rem; padding-right: 1rem; }
-.py-6 { padding-top: 1.5rem; padding-bottom: 1.5rem; }
-.bg-white { background-color: #ffffff; }
-.bg-blue-700 { background-color: #1d4ed8; }
-.bg-red-600 { background-color: #dc2626; }
-.bg-gray-500 { background-color: #6b7280; }
-.bg-gray-200 { background-color: #e5e7eb; }
-.text-white { color: #ffffff; }
-.text-blue-600 { color: #2563eb; }
-.text-green-600 { color: #059669; }
-.text-red-600 { color: #dc2626; }
-.text-gray-600 { color: #4b5563; }
-.text-gray-700 { color: #374151; }
-.text-gray-800 { color: #1f2937; }
-.text-blue-100 { color: #dbeafe; }
-.rounded-lg { border-radius: 0.5rem; }
-.rounded-md { border-radius: 0.375rem; }
-.shadow-lg { box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.1); }
-.shadow-md { box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1); }
-.border { border-width: 1px; border-color: #e5e7eb; }
-.border-gray-300 { border-color: #d1d5db; }
-.grid { display: grid; }
-.grid-cols-1 { grid-template-columns: repeat(1, minmax(0, 1fr)); }
-.gap-4 { gap: 1rem; }
-.mb-6 { margin-bottom: 1.5rem; }
-.mb-4 { margin-bottom: 1rem; }
-.mt-4 { margin-top: 1rem; }
-.mt-1 { margin-top: 0.25rem; }
-.mt-2 { margin-top: 0.5rem; }
-.mt-6 { margin-top: 1.5rem; }
-.p-2 { padding: 0.5rem; }
-.p-4 { padding: 1rem; }
-.p-6 { padding: 1.5rem; }
-.block { display: block; }
-.w-full { width: 100%; }
-.h-48 { height: 12rem; }
-.h-64 { height: 16rem; }
-.text-sm { font-size: 0.875rem; }
-.text-base { font-size: 1rem; }
-.text-lg { font-size: 1.125rem; }
-.text-xl { font-size: 1.25rem; }
-.text-2xl { font-size: 1.5rem; }
-.text-3xl { font-size: 1.875rem; }
-.font-medium { font-weight: 500; }
-.font-semibold { font-weight: 600; }
-.font-bold { font-weight: 700; }
-.cursor-pointer { cursor: pointer; }
-.overflow-x-auto { overflow-x: auto; }
-.overflow-y-auto { overflow-y: auto; }
-.list-disc { list-style-type: disc; }
-.list-decimal { list-style-type: decimal; }
-.pl-5 { padding-left: 1.25rem; }
-.flex { display: flex; }
-.items-center { align-items: center; }
-.items-end { align-items: flex-end; }
-.justify-between { justify-content: space-between; }
-.gap-2 { gap: 0.5rem; }
-.relative { position: relative; }
-.text-center { text-align: center; }
-
-/* Focus styles */
-.focus\:ring-2:focus { 
-    --tw-ring-offset-shadow: var(--tw-ring-inset) 0 0 0 var(--tw-ring-offset-width) var(--tw-ring-offset-color);
-    --tw-ring-shadow: var(--tw-ring-inset) 0 0 0 calc(2px + var(--tw-ring-offset-width)) var(--tw-ring-color);
-    box-shadow: var(--tw-ring-offset-shadow), var(--tw-ring-shadow), var(--tw-shadow, 0 0 #0000);
-}
-.focus\:ring-blue-500:focus { --tw-ring-color: #3b82f6; }
-
-/* Hover styles */
-.hover\:bg-red-700:hover { background-color: #b91c1c; }
-.hover\:bg-blue-700:hover { background-color: #1d4ed8; }
-.hover\:bg-gray-600:hover { background-color: #4b5563; }
-
-/* Responsive design */
-@media (min-width: 640px) {
-    .sm\:grid-cols-2 { grid-template-columns: repeat(2, minmax(0, 1fr)); }
-    .sm\:text-3xl { font-size: 1.875rem; }
-    .sm\:text-base { font-size: 1rem; }
-    .sm\:text-sm { font-size: 0.875rem; }
-    .sm\:p-6 { padding: 1.5rem; }
-    .sm\:h-64 { height: 16rem; }
-}
-
-@media (min-width: 1024px) {
-    .lg\:grid-cols-4 { grid-template-columns: repeat(4, minmax(0, 1fr)); }
-    .lg\:grid-cols-2 { grid-template-columns: repeat(2, minmax(0, 1fr)); }
-    .lg\:px-8 { padding-left: 2rem; padding-right: 2rem; }
-}
-
-@media (max-width: 768px) {
-    .accounting-container {
-        padding: 15px;
-    }
-    
-    .modal-content {
-        margin: 20% auto;
-        width: 95%;
-    }
-    
-    .table-container {
-        max-height: 300px;
-    }
-}
-
-@media (max-width: 640px) {
-    .grid-cols-2 { grid-template-columns: 1fr; }
-    .text-2xl { font-size: 1.25rem; }
-    .text-xl { font-size: 1.125rem; }
-    canvas { height: 200px !important; }
-}
-</style>
-
-<div class="accounting-container">
-    <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6">
+<link rel="stylesheet" href="assets/css/test.css">
+<div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6">
         <!-- Header -->
         <header class="bg-blue-700 text-white p-4 rounded-lg shadow-lg mb-6 relative">
             <div class="flex items-center justify-between">
                 <div class="flex items-center gap-4">
+                    <a href="transactions.php" class="text-white bg-red-600 hover:bg-red-700 px-3 py-1 rounded-md text-sm font-medium">Exit</a>
                     <div>
-                        <h1 class="text-2xl sm:text-3xl font-bold">Accounting and Calibration Dashboard</h1>
+                        <h1 class="text-2xl sm:text-3xl font-bold">Water Dispenser Dashboard</h1>
                         <p class="text-sm sm:text-base text-blue-100">Monitor and analyze dispenser performance</p>
                     </div>
                 </div>
@@ -531,101 +356,101 @@ if ($start_date > $end_date) {
             <p>&copy; 2025 Water Dispenser System. All rights reserved.</p>
         </footer>
     </div>
-</div>
 
-<script>
-    // Search functionality
-    document.getElementById('searchInput').addEventListener('input', function(e) {
-        const searchTerm = e.target.value.toLowerCase();
-        const rows = document.querySelectorAll('#transactionTable tr');
-        rows.forEach(row => {
-            const rowText = Array.from(row.querySelectorAll('td')).map(cell => cell.textContent.toLowerCase()).join(' ');
-            row.style.display = rowText.includes(searchTerm) ? '' : 'none';
+    <script>
+        // Search functionality
+        document.getElementById('searchInput').addEventListener('input', function(e) {
+            const searchTerm = e.target.value.toLowerCase();
+            const rows = document.querySelectorAll('#transactionTable tr');
+            rows.forEach(row => {
+                const rowText = Array.from(row.querySelectorAll('td')).map(cell => cell.textContent.toLowerCase()).join(' ');
+                row.style.display = rowText.includes(searchTerm) ? '' : 'none';
+            });
         });
-    });
 
-    // Modal functionality
-    const modal = document.getElementById('transactionModal');
-    const modalContent = document.getElementById('modalContent');
-    const closeModal = document.querySelector('.modal-close');
+        // Modal functionality
+        const modal = document.getElementById('transactionModal');
+        const modalContent = document.getElementById('modalContent');
+        const closeModal = document.querySelector('.modal-close');
 
-    document.querySelectorAll('.transaction-row').forEach(row => {
-        row.addEventListener('click', function() {
-            const data = JSON.parse(this.dataset.transaction);
-            modalContent.innerHTML = `
-                <p><strong>Transaction ID:</strong> ${data.id}</p>
-                <p><strong>Coin Type:</strong> ${data.coin_type}</p>
-                <p><strong>Amount Dispensed:</strong> ${data.amount} liters</p>
-                <p><strong>Expected:</strong> ${data.expected} liters</p>
-                <p><strong>Water Type:</strong> ${data.water_type}</p>
-                <p><strong>Date:</strong> ${data.date}</p>
-            `;
-            modal.style.display = 'block';
+        document.querySelectorAll('.transaction-row').forEach(row => {
+            row.addEventListener('click', function() {
+                const data = JSON.parse(this.dataset.transaction);
+                modalContent.innerHTML = `
+                    <p><strong>Transaction ID:</strong> ${data.id}</p>
+                    <p><strong>Coin Type:</strong> ${data.coin_type}</p>
+                    <p><strong>Amount Dispensed:</strong> ${data.amount} liters</p>
+                    <p><strong>Expected:</strong> ${data.expected} liters</p>
+                    <p><strong>Water Type:</strong> ${data.water_type}</p>
+                    <p><strong>Date:</strong> ${data.date}</p>
+                `;
+                modal.style.display = 'block';
+            });
         });
-    });
 
-    closeModal.addEventListener('click', function() {
-        modal.style.display = 'none';
-    });
-
-    window.addEventListener('click', function(event) {
-        if (event.target === modal) {
+        closeModal.addEventListener('click', function() {
             modal.style.display = 'none';
-        }
-    });
-
-    // Discrepancy card click functionality
-    document.getElementById('discrepancyCard').addEventListener('click', function() {
-        const rows = document.querySelectorAll('#transactionTable tr');
-        rows.forEach(row => {
-            const isDiscrepancy = row.classList.contains('discrepancy');
-            row.style.display = isDiscrepancy ? '' : 'none';
         });
-        document.getElementById('searchInput').value = ''; // Clear search input
-        // Scroll to transactions section
-        document.getElementById('transactionsSection').scrollIntoView({ behavior: 'smooth' });
-    });
 
-    // Calibration Chart
-    const ctx = document.getElementById('calibrationChart').getContext('2d');
-    new Chart(ctx, {
-        type: 'bar',
-        data: {
-            labels: <?= json_encode($chart_labels) ?>,
-            datasets: [{
-                label: 'Calibration Accuracy (%)',
-                data: <?= json_encode($chart_values) ?>,
-                backgroundColor: ['#3b82f6', '#10b981', '#ef4444'],
-                borderColor: ['#1d4ed8', '#059669', '#dc2626'],
-                borderWidth: 1
-            }]
-        },
-        options: {
-            scales: {
-                y: {
-                    beginAtZero: true,
-                    max: 100,
-                    title: { display: true, text: 'Accuracy (%)', font: { size: 12 } },
-                    ticks: { stepSize: 20, font: { size: 10 } }
-                },
-                x: {
-                    title: { display: true, text: 'Coin Type', font: { size: 12 } },
-                    ticks: { font: { size: 10 } }
-                }
+        window.addEventListener('click', function(event) {
+            if (event.target === modal) {
+                modal.style.display = 'none';
+            }
+        });
+
+        // Discrepancy card click functionality
+        document.getElementById('discrepancyCard').addEventListener('click', function() {
+            const rows = document.querySelectorAll('#transactionTable tr');
+            rows.forEach(row => {
+                const isDiscrepancy = row.classList.contains('discrepancy');
+                row.style.display = isDiscrepancy ? '' : 'none';
+            });
+            document.getElementById('searchInput').value = ''; // Clear search input
+            // Scroll to transactions section
+            document.getElementById('transactionsSection').scrollIntoView({ behavior: 'smooth' });
+        });
+
+        // Calibration Chart
+        const ctx = document.getElementById('calibrationChart').getContext('2d');
+        new Chart(ctx, {
+            type: 'bar',
+            data: {
+                labels: <?= json_encode($chart_labels) ?>,
+                datasets: [{
+                    label: 'Calibration Accuracy (%)',
+                    data: <?= json_encode($chart_values) ?>,
+                    backgroundColor: ['#3b82f6', '#10b981', '#ef4444'],
+                    borderColor: ['#1d4ed8', '#059669', '#dc2626'],
+                    borderWidth: 1
+                }]
             },
-            plugins: {
-                legend: { display: false },
-                tooltip: {
-                    callbacks: {
-                        label: function(context) {
-                            return `${context.raw.toFixed(2)}% accuracy`;
+            options: {
+                scales: {
+                    y: {
+                        beginAtZero: true,
+                        max: 100,
+                        title: { display: true, text: 'Accuracy (%)', font: { size: 12 } },
+                        ticks: { stepSize: 20, font: { size: 10 } }
+                    },
+                    x: {
+                        title: { display: true, text: 'Coin Type', font: { size: 12 } },
+                        ticks: { font: { size: 10 } }
+                    }
+                },
+                plugins: {
+                    legend: { display: false },
+                    tooltip: {
+                        callbacks: {
+                            label: function(context) {
+                                return `${context.raw.toFixed(2)}% accuracy`;
+                            }
                         }
                     }
-                }
-            },
-            maintainAspectRatio: false
-        }
-    });
-</script>
-<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
-<?php require_once 'includes/footer.php'; ?>
+                },
+                maintainAspectRatio: false
+            }
+        });
+    </script>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <?php require_once 'includes/footer.php'; ?>

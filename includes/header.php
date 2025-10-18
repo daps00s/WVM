@@ -8,6 +8,12 @@ function getActiveClass($currentPage) {
 }
 
 $pageTitle = $pageTitle ?? 'Dashboard';
+
+// Determine which transaction-related page is active
+$current_page = basename($_SERVER['PHP_SELF']);
+$is_transaction_page = ($current_page === 'transactions.php' || $current_page === 'accounting_and_calibration.php');
+$transaction_page_title = ($current_page === 'accounting_and_calibration.php') ? 'Accounting and Calibration' : 'Transactions';
+$transaction_page_url = ($current_page === 'accounting_and_calibration.php') ? 'accounting_and_calibration.php' : 'transactions.php';
 ?>
 <!DOCTYPE html>
 <html lang="en">
@@ -53,11 +59,17 @@ $pageTitle = $pageTitle ?? 'Dashboard';
                     </a>
                 </li>
                 <li class="menu-item">
-                    <a href="<?php echo basename($_SERVER['PHP_SELF']) === 'calibration.php' ? 'calibration.php' : 'transactions.php'; ?>" 
-                       class="menu-link <?php echo getActiveClass('transactions.php') . ' ' . getActiveClass('calibration.php'); ?>">
-                        <i class="fas fa-exchange-alt"></i> 
-                        <?php echo basename($_SERVER['PHP_SELF']) === 'calibration.php' ? 'Accounting and Calibration' : 'Transactions'; ?>
-                    </a>
+                    <?php if ($current_page === 'accounting_and_calibration.php'): ?>
+                        <!-- Show Accounting and Calibration as active when on that page -->
+                        <a href="accounting_and_calibration.php" class="menu-link active">
+                            <i class="fas fa-exchange-alt"></i> Accounting and Calibration
+                        </a>
+                    <?php else: ?>
+                        <!-- Show Transactions for all other cases -->
+                        <a href="transactions.php" class="menu-link <?php echo getActiveClass('transactions.php'); ?>">
+                            <i class="fas fa-exchange-alt"></i> Transactions
+                        </a>
+                    <?php endif; ?>
                 </li>
                 <li class="menu-item">
                     <a href="coin_collections.php" class="menu-link <?php echo getActiveClass('coin_collections.php'); ?>">
