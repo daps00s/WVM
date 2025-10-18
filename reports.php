@@ -413,6 +413,68 @@ function generateCSVReport($title, $columns, $data, $machineFilter, $timeFilter,
 }
 ?>
 <link rel="stylesheet" href="assets/css/reports.css">
+<style>
+/* Print-specific styles */
+@media print {
+    body * {
+        visibility: hidden;
+    }
+    .report-container.active,
+    .report-container.active * {
+        visibility: visible;
+    }
+    .report-container.active {
+        position: absolute;
+        left: 0;
+        top: 0;
+        width: 100%;
+        background: white;
+    }
+    .content-header,
+    .report-controls,
+    .content-actions,
+    .filter-info,
+    .btn,
+    .modal,
+    .error-message {
+        display: none !important;
+    }
+    .report-summary {
+        margin-bottom: 20px;
+        font-style: italic;
+        color: #666;
+    }
+    .table-responsive {
+        overflow: visible !important;
+    }
+    .report-table {
+        width: 100%;
+        border-collapse: collapse;
+        border: 2px solid #000 !important;
+    }
+    .report-table th,
+    .report-table td {
+        border: 1px solid #000 !important;
+        padding: 8px;
+        text-align: left;
+    }
+    .report-table th {
+        background-color: #f5f5f5 !important;
+        font-weight: bold;
+        border-bottom: 2px solid #000 !important;
+    }
+    .report-table tr {
+        border-bottom: 1px solid #000 !important;
+    }
+    .chart-container {
+        page-break-inside: avoid;
+    }
+    @page {
+        size: auto;
+        margin: 0.5in;
+    }
+}
+</style>
 <div class="content-area">
     <div class="content-wrapper">
         <div class="content-header">
@@ -477,8 +539,8 @@ function generateCSVReport($title, $columns, $data, $machineFilter, $timeFilter,
                     <button type="button" id="downloadPdf" class="btn btn-download pdf">
                         <i class="fas fa-file-pdf"></i> PDF
                     </button>
-                    <button type="button" id="downloadCsv" class="btn btn-download csv">
-                        <i class="fas fa-file-csv"></i> CSV
+                    <button type="button" id="printReport" class="btn btn-download print">
+                        <i class="fas fa-print"></i> Print
                     </button>
                 </div>
 
@@ -707,6 +769,10 @@ document.addEventListener('DOMContentLoaded', function() {
     const startDateInput = document.getElementById('startDate');
     const endDateInput = document.getElementById('endDate');
 
+    // PHP to JavaScript variables
+    const machineNameForFile = '<?php echo $machineNameForFile; ?>';
+    const timeFilterName = '<?php echo $timeFilterName; ?>';
+
     // Function to update visual type options based on report type
     function updateVisualTypeOptions() {
         const reportType = reportTypeSelect.value;
@@ -813,15 +879,15 @@ document.addEventListener('DOMContentLoaded', function() {
         }
     }
 
-    // Download buttons
+    // Download and Print buttons
     document.getElementById('downloadPdf').addEventListener('click', function() {
         downloadError.style.display = 'none';
         downloadReport('pdf');
     });
     
-    document.getElementById('downloadCsv').addEventListener('click', function() {
+    document.getElementById('printReport').addEventListener('click', function() {
         downloadError.style.display = 'none';
-        downloadReport('csv');
+        printReport();
     });
     
     // Chart rendering
@@ -1196,6 +1262,11 @@ document.addEventListener('DOMContentLoaded', function() {
                 return;
             }
 
+            // Show loading indicator
+            const originalButtonText = document.getElementById('downloadPdf').innerHTML;
+            document.getElementById('downloadPdf').innerHTML = '<i class="fas fa-spinner fa-spin"></i> Generating PDF...';
+            document.getElementById('downloadPdf').disabled = true;
+
             // Ensure chart or table is visible based on visual type
             const chartContainer = reportContainer.querySelector('.chart-container');
             const tableContainer = reportContainer.querySelector('.table-responsive');
@@ -1221,90 +1292,307 @@ document.addEventListener('DOMContentLoaded', function() {
                 }
             }
 
-            // Calculate content width, adjusting for bar charts
-            const isBarChart = visualType === 'bar' || visualType === 'stacked';
-            let contentWidth;
-            if (visualType !== 'table' && chartContainer) {
-                // For charts, use the chart container's width or calculate based on data
-                contentWidth = parseInt(chartContainer.style.width) || chartContainer.scrollWidth;
-                if (isBarChart) {
-                    // Estimate width based on number of bars (labels)
-                    const chartData = {
-                        machines: <?php echo json_encode($machine_status); ?>,
-                        sales: <?php echo json_encode($sales_summary); ?>,
-                        water: <?php echo json_encode($water_consumption); ?>
-                    }[reportType];
-                    const labelCount = chartData.length;
-                    const widthPerBar = 50; // Pixels per bar, matching renderChart logic
-                    contentWidth = Math.max(contentWidth, 600 + labelCount * widthPerBar);
-                }
-            } else if (tableContainer) {
-                // For tables, use the table's scrollWidth
-                contentWidth = tableContainer.scrollWidth;
-            } else {
-                contentWidth = 600; // Fallback
-            }
-
-            // Cap content width to fit within PDF page
-            const maxPageWidthPx = 960; // 10in at 96 DPI (landscape after margins)
-            contentWidth = Math.min(contentWidth, maxPageWidthPx);
-            const isWide = contentWidth > 720; // Threshold for landscape (7.5in at 96 DPI)
-
-            // Configure PDF settings
-            const margin = 0.5; // 0.5 inch margins
-            const pageWidth = isWide ? 11 : 8.5; // Letter size in inches
-            const pageHeight = isWide ? 8.5 : 11;
-            const printableWidth = pageWidth - 2 * margin; // Width after margins
-            const printableHeight = pageHeight - 2 * margin; // Height after margins
-            const contentWidthInches = contentWidth / 96; // Convert pixels to inches at 96 DPI
-
-            // Initialize jsPDF
-            const { jsPDF } = window.jspdf;
-            const pdf = new jsPDF({
-                orientation: isWide ? 'landscape' : 'portrait',
-                unit: 'in',
-                format: 'letter'
-            });
-
-            // Calculate scaling for html2canvas
-            const scale = Math.min(2, printableWidth / contentWidthInches); // Cap scale at 2 for quality
-
-            // Configure html2canvas
-            const canvasOptions = {
-                scale: scale,
-                useCORS: true,
-                logging: false,
-                width: contentWidth,
-                windowWidth: contentWidth
-            };
-
-            // Render canvas and generate PDF
+            // Wait 3 seconds to ensure charts are fully rendered
             setTimeout(() => {
-                html2canvas(reportContainer, canvasOptions).then(canvas => {
-                    const imgData = canvas.toDataURL('image/jpeg', 0.98);
-                    const imgWidth = Math.min(contentWidthInches, printableWidth);
-                    const imgHeight = (canvas.height / canvas.width) * imgWidth;
+                // Configure for legal bondpaper size (8.5 x 14 inches)
+                const legalWidth = 8.5;
+                const legalHeight = 14;
+                const margin = 0.5; // 0.5 inch margins
+                const printableWidth = legalWidth - (2 * margin);
+                const printableHeight = legalHeight - (2 * margin);
 
-                    // Calculate x-offset to center content
-                    const xOffset = (printableWidth - imgWidth) / 2 + margin;
+                // Initialize jsPDF with legal bondpaper size
+                const { jsPDF } = window.jspdf;
+                const pdf = new jsPDF({
+                    orientation: 'portrait',
+                    unit: 'in',
+                    format: [legalWidth, legalHeight] // Legal bondpaper size
+                });
 
-                    // Add image to PDF
-                    pdf.addImage(imgData, 'JPEG', xOffset, margin, imgWidth, imgHeight);
+                // Get all content that needs to be printed
+                const reportContent = reportContainer.cloneNode(true);
+                
+                // Remove filter info from print content
+                const filterInfo = reportContent.querySelector('.filter-info');
+                if (filterInfo) {
+                    filterInfo.remove();
+                }
 
-                    // Save PDF
-                    pdf.save(`${reportType}_${machineFilter}_${timeFilter}_${visualType}_${new Date().toISOString().replace(/[:.]/g, '')}.pdf`);
+                // Ensure proper display for printing
+                const chartContainerClone = reportContent.querySelector('.chart-container');
+                const tableContainerClone = reportContent.querySelector('.table-responsive');
+                
+                if (visualType !== 'table') {
+                    if (chartContainerClone) chartContainerClone.style.display = 'block';
+                    if (tableContainerClone) tableContainerClone.style.display = 'none';
+                } else {
+                    if (chartContainerClone) chartContainerClone.style.display = 'none';
+                    if (tableContainerClone) tableContainerClone.style.display = 'block';
+                }
 
+                // Set up temporary container for rendering
+                const tempContainer = document.createElement('div');
+                tempContainer.style.position = 'absolute';
+                tempContainer.style.left = '-9999px';
+                tempContainer.style.top = '0';
+                tempContainer.style.width = `${printableWidth * 96}px`; // Convert inches to pixels (96 DPI)
+                tempContainer.style.backgroundColor = '#FFFFFF';
+                tempContainer.style.padding = '20px';
+                tempContainer.style.fontFamily = 'Arial, sans-serif';
+                tempContainer.style.fontSize = '12pt';
+                tempContainer.appendChild(reportContent);
+                document.body.appendChild(tempContainer);
+
+                // Function to capture content in pages
+                const capturePages = async () => {
+                    let currentPosition = 0;
+                    let pageNumber = 1;
+                    const contentHeight = tempContainer.scrollHeight;
+                    const pageHeightPixels = printableHeight * 96; // Convert inches to pixels
+                    
+                    console.log('Content height:', contentHeight, 'Page height:', pageHeightPixels);
+
+                    while (currentPosition < contentHeight) {
+                        // Set container to show only current page
+                        tempContainer.style.height = `${pageHeightPixels}px`;
+                        tempContainer.style.overflow = 'hidden';
+                        tempContainer.style.marginTop = `-${currentPosition}px`;
+
+                        // Capture current page
+                        const canvas = await html2canvas(tempContainer, {
+                            scale: 2,
+                            useCORS: true,
+                            logging: false,
+                            width: printableWidth * 96,
+                            height: pageHeightPixels,
+                            backgroundColor: '#FFFFFF',
+                            windowWidth: printableWidth * 96,
+                            windowHeight: pageHeightPixels
+                        });
+
+                        const imgData = canvas.toDataURL('image/jpeg', 0.95);
+                        const imgProps = pdf.getImageProperties(imgData);
+                        const imgWidth = printableWidth;
+                        const imgHeight = (imgProps.height * imgWidth) / imgProps.width;
+
+                        // Add new page if not first page
+                        if (pageNumber > 1) {
+                            pdf.addPage();
+                        }
+
+                        // Add image to PDF centered on page
+                        pdf.addImage(imgData, 'JPEG', margin, margin, imgWidth, imgHeight);
+
+                        // Add page number footer
+                        pdf.setFontSize(10);
+                        pdf.setTextColor(100, 100, 100);
+                        pdf.text(
+                            `Page ${pageNumber}`,
+                            legalWidth / 2,
+                            legalHeight - 0.25,
+                            { align: 'center' }
+                        );
+
+                        currentPosition += pageHeightPixels;
+                        pageNumber++;
+                        
+                        console.log(`Captured page ${pageNumber - 1}, position: ${currentPosition}`);
+                    }
+
+                    // Clean up
+                    document.body.removeChild(tempContainer);
+
+                    return pdf;
+                };
+
+                // Generate the multi-page PDF
+                capturePages().then((completePdf) => {
+                    // Generate PDF blob
+                    const pdfBlob = completePdf.output('blob');
+                    const pdfUrl = URL.createObjectURL(pdfBlob);
+                    
+                    // Open blank tab first with loading message
+                    const newTab = window.open('', '_blank');
+                    if (newTab) {
+                        // Show loading message in the new tab
+                        newTab.document.write(`
+                            <!DOCTYPE html>
+                            <html>
+                                <head>
+                                    <title>Generating PDF Report...</title>
+                                    <style>
+                                        body {
+                                            margin: 0;
+                                            padding: 0;
+                                            display: flex;
+                                            justify-content: center;
+                                            align-items: center;
+                                            height: 100vh;
+                                            font-family: Arial, sans-serif;
+                                            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+                                            color: white;
+                                        }
+                                        .loading-container {
+                                            text-align: center;
+                                            background: rgba(255,255,255,0.1);
+                                            padding: 40px;
+                                            border-radius: 10px;
+                                            backdrop-filter: blur(10px);
+                                        }
+                                        .spinner {
+                                            font-size: 48px;
+                                            margin-bottom: 20px;
+                                            animation: spin 1s linear infinite;
+                                        }
+                                        @keyframes spin {
+                                            0% { transform: rotate(0deg); }
+                                            100% { transform: rotate(360deg); }
+                                        }
+                                        h2 {
+                                            margin-bottom: 10px;
+                                            font-size: 24px;
+                                        }
+                                        p {
+                                            margin-bottom: 5px;
+                                            font-size: 16px;
+                                        }
+                                        .details {
+                                            margin-top: 20px;
+                                            font-size: 14px;
+                                            opacity: 0.8;
+                                        }
+                                    </style>
+                                </head>
+                                <body>
+                                    <div class="loading-container">
+                                        <div class="spinner">⏳</div>
+                                        <h2>Generating Legal Size PDF Report</h2>
+                                        <p>Preparing your report for printing...</p>
+                                        <p>Paper Size: Legal Bondpaper (8.5" x 14")</p>
+                                        <div class="details">
+                                            <p>Please wait while we generate all pages</p>
+                                            <p>This may take a few moments</p>
+                                        </div>
+                                    </div>
+                                </body>
+                            </html>
+                        `);
+                        
+                        // Wait 3 seconds then load the PDF in the new tab
+                        setTimeout(() => {
+                            newTab.location.href = pdfUrl;
+                            
+                            // Also trigger download after 3 seconds
+                            setTimeout(() => {
+                                completePdf.save(`${reportType}_Report_${machineNameForFile}_${timeFilterName}_${new Date().toISOString().split('T')[0]}.pdf`);
+                                
+                                // Auto-close the preview tab after 10 seconds
+                                setTimeout(() => {
+                                    if (!newTab.closed) {
+                                        newTab.close();
+                                    }
+                                }, 10000);
+                            }, 3000);
+                        }, 3000);
+                    }
+
+                    // Clean up URL
+                    setTimeout(() => URL.revokeObjectURL(pdfUrl), 10000);
+                    
                     // Restore original display
                     if (chartContainer) chartContainer.style.display = originalChartDisplay;
                     if (tableContainer) tableContainer.style.display = originalTableDisplay;
+                    
+                    // Restore button
+                    document.getElementById('downloadPdf').innerHTML = originalButtonText;
+                    document.getElementById('downloadPdf').disabled = false;
                 }).catch(err => {
                     console.error('PDF generation failed:', err);
                     downloadError.style.display = 'block';
+                    
+                    // Clean up
+                    if (document.body.contains(tempContainer)) {
+                        document.body.removeChild(tempContainer);
+                    }
                     if (chartContainer) chartContainer.style.display = originalChartDisplay;
                     if (tableContainer) tableContainer.style.display = originalTableDisplay;
+                    
+                    // Restore button
+                    document.getElementById('downloadPdf').innerHTML = originalButtonText;
+                    document.getElementById('downloadPdf').disabled = false;
                 });
-            }, 1000);
+            }, 3000); // Wait 3 seconds for charts to render
         }
+    }
+
+    function printReport() {
+        const reportContainer = document.querySelector('.report-container.active');
+        if (!reportContainer) {
+            console.error('No active report container found');
+            downloadError.style.display = 'block';
+            return;
+        }
+
+        // Store original body content and classes
+        const originalBodyContent = document.body.innerHTML;
+        const originalBodyClasses = document.body.className;
+        
+        // Create print-specific content
+        const printContent = reportContainer.cloneNode(true);
+        
+        // Remove filter info from print content
+        const filterInfo = printContent.querySelector('.filter-info');
+        if (filterInfo) {
+            filterInfo.remove();
+        }
+        
+        // Set up print-specific body
+        document.body.innerHTML = '';
+        document.body.className = 'print-mode';
+        document.body.appendChild(printContent);
+        
+        // Ensure charts are visible for printing if visual type is not table
+        const visualType = '<?php echo $currentVisualType; ?>';
+        const reportType = '<?php echo $currentReportType; ?>';
+        
+        if (visualType !== 'table' && reportType !== 'transactions') {
+            const chartContainer = printContent.querySelector('.chart-container');
+            const tableContainer = printContent.querySelector('.table-responsive');
+            if (chartContainer) chartContainer.style.display = 'block';
+            if (tableContainer) tableContainer.style.display = 'none';
+        }
+        
+        // Set print styles
+        document.body.style.padding = '20px';
+        document.body.style.fontFamily = 'Arial, sans-serif';
+        document.body.style.fontSize = '12pt';
+        
+        // Wait 3 seconds for charts to fully render, then print
+        setTimeout(() => {
+            window.print();
+            
+            // Restore original content after printing
+            setTimeout(() => {
+                document.body.innerHTML = originalBodyContent;
+                document.body.className = originalBodyClasses;
+                
+                // Re-initialize any necessary event listeners
+                initializeEventListeners();
+            }, 500);
+        }, 3000); // Wait 3 seconds for charts to render
+    }
+
+    function initializeEventListeners() {
+        // Re-attach event listeners after restoring content
+        document.getElementById('downloadPdf').addEventListener('click', function() {
+            downloadError.style.display = 'none';
+            downloadReport('pdf');
+        });
+        
+        document.getElementById('printReport').addEventListener('click', function() {
+            downloadError.style.display = 'none';
+            printReport();
+        });
     }
 });
 </script>
