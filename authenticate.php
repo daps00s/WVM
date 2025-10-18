@@ -26,6 +26,6 @@ if ($user) {
 }
 
 // If user doesn't exist or password is incorrect
-header("Location: index.php?error=Invalid username or password");
+header("Location: wvm/index.php?error=Invalid username or password");
 exit;
 ?>
