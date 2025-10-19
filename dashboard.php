@@ -159,7 +159,7 @@ $transactions = $pdo->query("SELECT t.transaction_id, t.amount_dispensed, t.Date
             <?php endif; ?>
             
             <div class="action-buttons">
-                <a href="water_levels.php" class="btn-secondary">
+                <a href="water_levels.php" class="btn-secondary" style="text-decoration: none;">
                     <i class="fas fa-tint"></i> View All Water Levels
                 </a>
                 

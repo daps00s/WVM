@@ -159,10 +159,125 @@ $machines = $pdo->query("
 // Get all locations for dropdowns
 $locations = $pdo->query("SELECT * FROM location ORDER BY location_name")->fetchAll();
 
+// Get statistics for stat cards
+$total_machines = $pdo->query("SELECT COUNT(*) as total FROM dispenser")->fetch();
+$active_machines = $pdo->query("SELECT COUNT(*) as total FROM dispenserlocation WHERE Status = 1")->fetch();
+$deployed_machines = $pdo->query("SELECT COUNT(*) as total FROM dispenserlocation WHERE location_id IS NOT NULL")->fetch();
+$total_capacity = $pdo->query("SELECT SUM(Capacity) as total FROM dispenser")->fetch();
+
 // Check if we should show the add modal
 $showAddModal = isset($_GET['showAddModal']) && $_GET['showAddModal'] == 'true';
 ?>
 <link rel="stylesheet" href="assets/css/machines.css">
+<style>
+/* Stat Cards Styles */
+.stats-grid {
+    display: grid;
+    grid-template-columns: repeat(4, 1fr);
+    gap: 20px;
+    margin-bottom: 30px;
+}
+
+.stat-card {
+    background: white;
+    border-radius: 12px;
+    padding: 24px;
+    box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+    border: 1px solid #e2e8f0;
+    transition: all 0.3s ease;
+    display: flex;
+    align-items: center;
+    gap: 16px;
+}
+
+.stat-card:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 8px 15px rgba(0, 0, 0, 0.15);
+}
+
+.stat-icon {
+    width: 60px;
+    height: 60px;
+    border-radius: 12px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 24px;
+    color: white;
+}
+
+.stat-content {
+    flex: 1;
+}
+
+.stat-title {
+    font-size: 14px;
+    font-weight: 600;
+    color: #64748b;
+    margin-bottom: 8px;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+}
+
+.stat-value {
+    font-size: 28px;
+    font-weight: 700;
+    color: #1e293b;
+    margin-bottom: 8px;
+    line-height: 1;
+}
+
+.stat-change {
+    font-size: 12px;
+    font-weight: 600;
+    display: flex;
+    align-items: center;
+    gap: 4px;
+}
+
+.stat-change.success {
+    color: #059669;
+}
+
+/* Stat card colors */
+.stat-card:nth-child(1) .stat-icon {
+    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+}
+
+.stat-card:nth-child(2) .stat-icon {
+    background: linear-gradient(135deg, #4facfe 0%, #00f2fe 100%);
+}
+
+.stat-card:nth-child(3) .stat-icon {
+    background: linear-gradient(135deg, #f093fb 0%, #f5576c 100%);
+}
+
+.stat-card:nth-child(4) .stat-icon {
+    background: linear-gradient(135deg, #43e97b 0%, #38f9d7 100%);
+}
+
+/* Responsive design */
+@media (max-width: 1200px) {
+    .stats-grid {
+        grid-template-columns: repeat(2, 1fr);
+    }
+}
+
+@media (max-width: 768px) {
+    .stats-grid {
+        grid-template-columns: 1fr;
+    }
+    
+    .stat-card {
+        padding: 20px;
+    }
+    
+    .stat-value {
+        font-size: 24px;
+    }
+}
+</style>
+
 <div class="content-area">
     <div class="content-wrapper">
         <!-- Notification Toast -->
@@ -193,6 +308,50 @@ $showAddModal = isset($_GET['showAddModal']) && $_GET['showAddModal'] == 'true';
                     <button class="btn-primary" id="addMachineBtn">
                         <i class="fas fa-plus"></i> <span class="btn-text">Add New Machine</span>
                     </button>
+                </div>
+            </div>
+        </div>
+
+        <!-- Stats Grid -->
+        <div class="stats-grid">
+            <div class="stat-card">
+                <div class="stat-icon"><i class="fas fa-cogs"></i></div>
+                <div class="stat-content">
+                    <div class="stat-title">Total Machines</div>
+                    <div class="stat-value"><?= $total_machines['total'] ?></div>
+                    <div class="stat-change success">
+                        <i class="fas fa-microchip"></i> All Dispensers
+                    </div>
+                </div>
+            </div>
+            <div class="stat-card">
+                <div class="stat-icon"><i class="fas fa-play-circle"></i></div>
+                <div class="stat-content">
+                    <div class="stat-title">Active Machines</div>
+                    <div class="stat-value"><?= $active_machines['total'] ?></div>
+                    <div class="stat-change success">
+                        <i class="fas fa-check-circle"></i> Currently Running
+                    </div>
+                </div>
+            </div>
+            <div class="stat-card">
+                <div class="stat-icon"><i class="fas fa-map-marker-alt"></i></div>
+                <div class="stat-content">
+                    <div class="stat-title">Deployed Machines</div>
+                    <div class="stat-value"><?= $deployed_machines['total'] ?></div>
+                    <div class="stat-change success">
+                        <i class="fas fa-location-arrow"></i> At Locations
+                    </div>
+                </div>
+            </div>
+            <div class="stat-card">
+                <div class="stat-icon"><i class="fas fa-tint"></i></div>
+                <div class="stat-content">
+                    <div class="stat-title">Total Capacity</div>
+                    <div class="stat-value"><?= number_format($total_capacity['total'] ?? 0) ?>L</div>
+                    <div class="stat-change success">
+                        <i class="fas fa-water"></i> Combined Storage
+                    </div>
                 </div>
             </div>
         </div>

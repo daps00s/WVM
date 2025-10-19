@@ -1,4 +1,5 @@
 <?php
+//locations.php - Location Management Page
 $pageTitle = 'Locations';
 require_once 'includes/header.php';
 
@@ -60,8 +61,8 @@ $locations = $pdo->query("SELECT l.*, COUNT(dl.dispenser_id) as machine_count,
                           LEFT JOIN transaction t ON dl.dispenser_id = t.dispenser_id
                           GROUP BY l.location_id")->fetchAll();
 
-// Fetch all locations for map (only active dispensers)
-$all_locations = $pdo->query("SELECT l.location_id, l.location_name, l.latitude, l.longitude, 
+// Fetch all locations for map (only active dispensers) - including address
+$all_locations = $pdo->query("SELECT l.location_id, l.location_name, l.address, l.latitude, l.longitude, 
                               COALESCE(SUM(t.amount_dispensed), 0) as total_liters,
                               GROUP_CONCAT(DISTINCT d.Description) as descriptions
                               FROM location l
@@ -72,7 +73,7 @@ $all_locations = $pdo->query("SELECT l.location_id, l.location_name, l.latitude,
                               GROUP BY l.location_id")->fetchAll();
 
 // Fetch ITC-specific dispensers (at CET - ITC coordinates)
-$itc_dispensers = $pdo->query("SELECT l.location_id, l.location_name, l.latitude, l.longitude, 
+$itc_dispensers = $pdo->query("SELECT l.location_id, l.location_name, l.address, l.latitude, l.longitude, 
                                COALESCE(SUM(t.amount_dispensed), 0) as total_liters,
                                GROUP_CONCAT(DISTINCT d.Description) as descriptions
                                FROM location l
@@ -83,7 +84,7 @@ $itc_dispensers = $pdo->query("SELECT l.location_id, l.location_name, l.latitude
                                GROUP BY l.location_id")->fetchAll();
 
 // Fetch top 5 locations (highest total liters dispensed)
-$top_locations = $pdo->query("SELECT l.location_id, l.location_name, l.latitude, l.longitude, 
+$top_locations = $pdo->query("SELECT l.location_id, l.location_name, l.address, l.latitude, l.longitude, 
                               COALESCE(SUM(t.amount_dispensed), 0) as total_liters,
                               GROUP_CONCAT(DISTINCT d.Description) as descriptions
                               FROM location l
@@ -105,6 +106,12 @@ $top_machines = $pdo->query("SELECT d.dispenser_id, d.Description, l.location_na
                              GROUP BY d.dispenser_id, d.Description, l.location_name
                              ORDER BY total_liters DESC
                              LIMIT 5")->fetchAll();
+
+// Get statistics for stat cards
+$total_locations = $pdo->query("SELECT COUNT(*) as total FROM location")->fetch();
+$active_locations = $pdo->query("SELECT COUNT(DISTINCT location_id) as total FROM dispenserlocation WHERE Status = 1")->fetch();
+$total_dispensers = $pdo->query("SELECT COUNT(*) as total FROM dispenserlocation WHERE Status = 1")->fetch();
+$total_volume = $pdo->query("SELECT COALESCE(SUM(amount_dispensed), 0) as total FROM transaction")->fetch();
 
 // Determine trend data based on GET parameters
 $trend_data = [];
@@ -170,6 +177,115 @@ if ($trend_data && count($trend_data) >= 2 && $first_date) {
 $max_total_liters = $top_locations ? $top_locations[0]['total_liters'] : 1; // Avoid division by zero
 ?>
 <link rel="stylesheet" href="assets/css/locations.css">
+<style>
+/* Stat Cards Styles */
+.stats-grid {
+    display: grid;
+    grid-template-columns: repeat(4, 1fr);
+    gap: 20px;
+    margin-bottom: 30px;
+}
+
+.stat-card {
+    background: white;
+    border-radius: 12px;
+    padding: 24px;
+    box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+    border: 1px solid #e2e8f0;
+    transition: all 0.3s ease;
+    display: flex;
+    align-items: center;
+    gap: 16px;
+}
+
+.stat-card:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 8px 15px rgba(0, 0, 0, 0.15);
+}
+
+.stat-icon {
+    width: 60px;
+    height: 60px;
+    border-radius: 12px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 24px;
+    color: white;
+}
+
+.stat-content {
+    flex: 1;
+}
+
+.stat-title {
+    font-size: 14px;
+    font-weight: 600;
+    color: #64748b;
+    margin-bottom: 8px;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+}
+
+.stat-value {
+    font-size: 28px;
+    font-weight: 700;
+    color: #1e293b;
+    margin-bottom: 8px;
+    line-height: 1;
+}
+
+.stat-change {
+    font-size: 12px;
+    font-weight: 600;
+    display: flex;
+    align-items: center;
+    gap: 4px;
+}
+
+.stat-change.success {
+    color: #059669;
+}
+
+/* Stat card colors */
+.stat-card:nth-child(1) .stat-icon {
+    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+}
+
+.stat-card:nth-child(2) .stat-icon {
+    background: linear-gradient(135deg, #4facfe 0%, #00f2fe 100%);
+}
+
+.stat-card:nth-child(3) .stat-icon {
+    background: linear-gradient(135deg, #f093fb 0%, #f5576c 100%);
+}
+
+.stat-card:nth-child(4) .stat-icon {
+    background: linear-gradient(135deg, #43e97b 0%, #38f9d7 100%);
+}
+
+/* Responsive design */
+@media (max-width: 1200px) {
+    .stats-grid {
+        grid-template-columns: repeat(2, 1fr);
+    }
+}
+
+@media (max-width: 768px) {
+    .stats-grid {
+        grid-template-columns: 1fr;
+    }
+    
+    .stat-card {
+        padding: 20px;
+    }
+    
+    .stat-value {
+        font-size: 24px;
+    }
+}
+</style>
+
 <div class="content-area">
     <div class="content-wrapper">
         <!-- Notification Toast -->
@@ -199,6 +315,50 @@ $max_total_liters = $top_locations ? $top_locations[0]['total_liters'] : 1; // A
                     <button class="btn-primary" id="addLocationBtn">
                         <i class="fas fa-plus"></i> <span class="btn-text">Add New Location</span>
                     </button>
+                </div>
+            </div>
+        </div>
+
+        <!-- Stats Grid -->
+        <div class="stats-grid">
+            <div class="stat-card">
+                <div class="stat-icon"><i class="fas fa-map-marker-alt"></i></div>
+                <div class="stat-content">
+                    <div class="stat-title">Total Locations</div>
+                    <div class="stat-value"><?= $total_locations['total'] ?></div>
+                    <div class="stat-change success">
+                        <i class="fas fa-location-arrow"></i> All Locations
+                    </div>
+                </div>
+            </div>
+            <div class="stat-card">
+                <div class="stat-icon"><i class="fas fa-play-circle"></i></div>
+                <div class="stat-content">
+                    <div class="stat-title">Active Locations</div>
+                    <div class="stat-value"><?= $active_locations['total'] ?></div>
+                    <div class="stat-change success">
+                        <i class="fas fa-check-circle"></i> With Active Machines
+                    </div>
+                </div>
+            </div>
+            <div class="stat-card">
+                <div class="stat-icon"><i class="fas fa-cogs"></i></div>
+                <div class="stat-content">
+                    <div class="stat-title">Total Dispensers</div>
+                    <div class="stat-value"><?= $total_dispensers['total'] ?></div>
+                    <div class="stat-change success">
+                        <i class="fas fa-microchip"></i> Deployed Machines
+                    </div>
+                </div>
+            </div>
+            <div class="stat-card">
+                <div class="stat-icon"><i class="fas fa-tint"></i></div>
+                <div class="stat-content">
+                    <div class="stat-title">Total Volume</div>
+                    <div class="stat-value"><?= number_format($total_volume['total'] ?? 0) ?>L</div>
+                    <div class="stat-change success">
+                        <i class="fas fa-water"></i> All Locations
+                    </div>
                 </div>
             </div>
         </div>
@@ -470,6 +630,7 @@ const allLocations = [
         lat: <?= $data['latitude'] ?>,
         lng: <?= $data['longitude'] ?>,
         name: '<?= addslashes($data['location_name']) ?>',
+        address: '<?= addslashes($data['address']) ?>',
         total_liters: <?= $data['total_liters'] ?>,
         location_id: <?= $data['location_id'] ?>,
         descriptions: '<?= addslashes($data['descriptions'] ?? 'No descriptions available') ?>'
@@ -484,6 +645,7 @@ const itcDispensers = [
         lng: <?= $data['longitude'] ?>,
         total_liters: <?= $data['total_liters'] ?>,
         name: '<?= addslashes($data['location_name']) ?>',
+        address: '<?= addslashes($data['address']) ?>',
         location_id: <?= $data['location_id'] ?>,
         descriptions: '<?= addslashes($data['descriptions'] ?? 'No descriptions available') ?>'
     },
@@ -595,9 +757,10 @@ function initMap() {
         const descriptionList = location.descriptions !== 'No descriptions available' 
             ? location.descriptions 
             : 'No descriptions available';
-        const popupText = `${location.name}<br>` +
-                          `Total Dispensed: ${location.total_liters.toFixed(1)}L<br>` +
-                          `Dispensers: ${descriptionList}`;
+        const popupText = `<strong>${location.name}</strong><br>` +
+                          `<strong>Address:</strong> ${location.address}<br>` +
+                          `<strong>Total Dispensed:</strong> ${location.total_liters.toFixed(1)}L<br>` +
+                          `<strong>Dispensers:</strong> ${descriptionList}`;
         marker.bindPopup(popupText);
         marker.on('mouseover', function() {
             this.openPopup();

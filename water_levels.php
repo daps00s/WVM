@@ -93,15 +93,123 @@ $waterLevels = $pdo->query("
     ORDER BY COALESCE(ds.water_level, 0) ASC
 ")->fetchAll();
 
-// Count alerts
+// Count alerts and get additional stats
 $lowWaterCount = 0;
 $issueCount = 0;
+$totalMachines = 0;
+$activeMachines = 0;
+$totalCapacity = 0;
+$currentUsage = 0;
+
 foreach ($waterLevels as $level) {
-    if ($level['machine_status'] == 1 && $level['water_level'] < 2) $lowWaterCount++;
-    if ($level['machine_status'] == 1 && $level['operational_status'] != 'Normal') $issueCount++;
+    $totalMachines++;
+    if ($level['machine_status'] == 1) {
+        $activeMachines++;
+        if ($level['water_level'] < 2) $lowWaterCount++;
+        if ($level['operational_status'] != 'Normal') $issueCount++;
+    }
+    $totalCapacity += $level['Capacity'];
+    $currentUsage += $level['water_level'];
 }
+
+$usagePercentage = $totalCapacity > 0 ? ($currentUsage / $totalCapacity) * 100 : 0;
 ?>
 <link rel="stylesheet" href="assets/css/water_levels.css">
+<style>
+.stats-grid {
+    display: grid;
+    grid-template-columns: repeat(4, 1fr);
+    gap: 20px;
+    margin-bottom: 30px;
+}
+
+.stat-card {
+    background: white;
+    border-radius: 12px;
+    padding: 24px;
+    box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+    border: 1px solid #e2e8f0;
+    transition: all 0.3s ease;
+    display: flex;
+    align-items: center;
+    gap: 16px;
+}
+
+.stat-card:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 8px 15px rgba(0, 0, 0, 0.15);
+}
+
+.stat-icon {
+    width: 60px;
+    height: 60px;
+    border-radius: 12px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 24px;
+    color: white;
+}
+
+.stat-content {
+    flex: 1;
+}
+
+.stat-title {
+    font-size: 14px;
+    font-weight: 600;
+    color: #64748b;
+    margin-bottom: 8px;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+}
+
+.stat-value {
+    font-size: 28px;
+    font-weight: 700;
+    color: #1e293b;
+    margin-bottom: 8px;
+    line-height: 1;
+}
+
+.stat-change {
+    font-size: 12px;
+    font-weight: 600;
+    display: flex;
+    align-items: center;
+    gap: 4px;
+}
+
+.stat-change.warning {
+    color: #f59e0b;
+}
+
+.stat-change.danger {
+    color: #ef4444;
+}
+
+.stat-change.success {
+    color: #10b981;
+}
+
+/* Stat card colors */
+.stat-card:nth-child(1) .stat-icon {
+    background: linear-gradient(135deg, #f59e0b 0%, #fbbf24 100%);
+}
+
+.stat-card:nth-child(2) .stat-icon {
+    background: linear-gradient(135deg, #ef4444 0%, #f87171 100%);
+}
+
+.stat-card:nth-child(3) .stat-icon {
+    background: linear-gradient(135deg, #10b981 0%, #34d399 100%);
+}
+
+.stat-card:nth-child(4) .stat-icon {
+    background: linear-gradient(135deg, #3b82f6 0%, #60a5fa 100%);
+}
+</style>
+
 <div class="content-area">
     <div class="content-wrapper">
         <!-- Notification Toast -->
@@ -120,19 +228,46 @@ foreach ($waterLevels as $level) {
             </div>
         </div>
 
+        <!-- Updated Stats Grid with 4 Cards -->
         <div class="stats-grid">
-            <div class="stat-card warning">
-                <div class="stat-title">Low Water Alerts</div>
-                <div class="stat-value"><?= $lowWaterCount ?></div>
-                <div class="stat-change warning">
-                    <i class="fas fa-exclamation-triangle"></i> Needs Refill
+            <div class="stat-card">
+                <div class="stat-icon"><i class="fas fa-exclamation-triangle"></i></div>
+                <div class="stat-content">
+                    <div class="stat-title">Low Water Alerts</div>
+                    <div class="stat-value"><?= $lowWaterCount ?></div>
+                    <div class="stat-change warning">
+                        <i class="fas fa-tint"></i> Needs Refill
+                    </div>
                 </div>
             </div>
-            <div class="stat-card danger">
-                <div class="stat-title">Operational Issues</div>
-                <div class="stat-value"><?= $issueCount ?></div>
-                <div class="stat-change danger">
-                    <i class="fas fa-tools"></i> Needs Maintenance
+            <div class="stat-card">
+                <div class="stat-icon"><i class="fas fa-tools"></i></div>
+                <div class="stat-content">
+                    <div class="stat-title">Operational Issues</div>
+                    <div class="stat-value"><?= $issueCount ?></div>
+                    <div class="stat-change danger">
+                        <i class="fas fa-wrench"></i> Needs Maintenance
+                    </div>
+                </div>
+            </div>
+            <div class="stat-card">
+                <div class="stat-icon"><i class="fas fa-cogs"></i></div>
+                <div class="stat-content">
+                    <div class="stat-title">Active Machines</div>
+                    <div class="stat-value"><?= $activeMachines ?>/<?= $totalMachines ?></div>
+                    <div class="stat-change success">
+                        <i class="fas fa-check-circle"></i> Operational
+                    </div>
+                </div>
+            </div>
+            <div class="stat-card">
+                <div class="stat-icon"><i class="fas fa-water"></i></div>
+                <div class="stat-content">
+                    <div class="stat-title">Total Capacity Usage</div>
+                    <div class="stat-value"><?= number_format($usagePercentage, 1) ?>%</div>
+                    <div class="stat-change success">
+                        <i class="fas fa-chart-pie"></i> <?= number_format($currentUsage, 1) ?>L/<?= $totalCapacity ?>L
+                    </div>
                 </div>
             </div>
         </div>
@@ -395,15 +530,29 @@ function refreshWaterLevels() {
 function updateStatsCounters(data) {
     let lowWaterCount = 0;
     let issueCount = 0;
+    let activeMachines = 0;
+    let totalMachines = data.length;
+    let totalCapacity = 0;
+    let currentUsage = 0;
     
     data.forEach(machine => {
-        if (machine.machine_status == 1 && machine.water_level < 2) lowWaterCount++;
-        if (machine.machine_status == 1 && machine.operational_status != 'Normal') issueCount++;
+        totalCapacity += machine.Capacity;
+        currentUsage += machine.water_level;
+        if (machine.machine_status == 1) {
+            activeMachines++;
+            if (machine.water_level < 2) lowWaterCount++;
+            if (machine.operational_status != 'Normal') issueCount++;
+        }
     });
     
+    const usagePercentage = totalCapacity > 0 ? (currentUsage / totalCapacity) * 100 : 0;
+    
     // Update the stat cards
-    document.querySelector('.stat-card.warning .stat-value').textContent = lowWaterCount;
-    document.querySelector('.stat-card.danger .stat-value').textContent = issueCount;
+    document.querySelector('.stat-card:nth-child(1) .stat-value').textContent = lowWaterCount;
+    document.querySelector('.stat-card:nth-child(2) .stat-value').textContent = issueCount;
+    document.querySelector('.stat-card:nth-child(3) .stat-value').textContent = activeMachines + '/' + totalMachines;
+    document.querySelector('.stat-card:nth-child(4) .stat-value').textContent = usagePercentage.toFixed(1) + '%';
+    document.querySelector('.stat-card:nth-child(4) .stat-change').innerHTML = `<i class="fas fa-chart-pie"></i> ${currentUsage.toFixed(1)}L/${totalCapacity}L`;
 }
 
 // Start auto-refresh

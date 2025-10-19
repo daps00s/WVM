@@ -215,6 +215,123 @@ $stmt = $pdo->query("SELECT dispenser_id, Description FROM dispenser WHERE dispe
 $dispensers = $stmt->fetchAll(PDO::FETCH_ASSOC);
 ?>
 <link rel="stylesheet" href="assets/css/coin_collections.css">
+<style>
+/* Stat Cards Styles */
+.stats-grid {
+    display: grid;
+    grid-template-columns: repeat(4, 1fr);
+    gap: 20px;
+    margin-bottom: 30px;
+}
+
+.stat-card {
+    background: white;
+    border-radius: 12px;
+    padding: 24px;
+    box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+    border: 1px solid #e2e8f0;
+    transition: all 0.3s ease;
+    display: flex;
+    align-items: center;
+    gap: 16px;
+}
+
+.stat-card:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 8px 15px rgba(0, 0, 0, 0.15);
+}
+
+.stat-icon {
+    width: 60px;
+    height: 60px;
+    border-radius: 12px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 24px;
+    color: white;
+}
+
+.stat-content {
+    flex: 1;
+}
+
+.stat-title {
+    font-size: 14px;
+    font-weight: 600;
+    color: #64748b;
+    margin-bottom: 8px;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+}
+
+.stat-value {
+    font-size: 28px;
+    font-weight: 700;
+    color: #1e293b;
+    margin-bottom: 8px;
+    line-height: 1;
+}
+
+.stat-change {
+    font-size: 12px;
+    font-weight: 600;
+    display: flex;
+    align-items: center;
+    gap: 4px;
+}
+
+.stat-change.success {
+    color: #059669;
+}
+
+.stat-change.warning {
+    color: #f59e0b;
+}
+
+.stat-change.danger {
+    color: #ef4444;
+}
+
+/* Stat card colors */
+.stat-card:nth-child(1) .stat-icon {
+    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+}
+
+.stat-card:nth-child(2) .stat-icon {
+    background: linear-gradient(135deg, #4facfe 0%, #00f2fe 100%);
+}
+
+.stat-card:nth-child(3) .stat-icon {
+    background: linear-gradient(135deg, #f093fb 0%, #f5576c 100%);
+}
+
+.stat-card:nth-child(4) .stat-icon {
+    background: linear-gradient(135deg, #43e97b 0%, #38f9d7 100%);
+}
+
+/* Responsive design */
+@media (max-width: 1200px) {
+    .stats-grid {
+        grid-template-columns: repeat(2, 1fr);
+    }
+}
+
+@media (max-width: 768px) {
+    .stats-grid {
+        grid-template-columns: 1fr;
+    }
+    
+    .stat-card {
+        padding: 20px;
+    }
+    
+    .stat-value {
+        font-size: 24px;
+    }
+}
+</style>
+
 <div class="content-area">
     <div class="content-wrapper">
         <div class="content-header">
@@ -238,25 +355,44 @@ $dispensers = $stmt->fetchAll(PDO::FETCH_ASSOC);
 
         <!-- Stats Grid -->
         <div class="stats-grid">
-            <div class="stat-card warning">
-                <div class="stat-title">Total Revenue</div>
-                <div class="stat-value"><?php echo number_format($total_revenue, 2); ?> PHP</div>
-                <div class="stat-change warning">
-                    <i class="fas fa-money-bill-wave"></i> Across <?php echo $selected_dispenser ? 'Selected Dispenser' : 'All Machines'; ?>
+            <div class="stat-card">
+                <div class="stat-icon"><i class="fas fa-money-bill-wave"></i></div>
+                <div class="stat-content">
+                    <div class="stat-title">Total Revenue</div>
+                    <div class="stat-value"><?php echo number_format($total_revenue, 2); ?> PHP</div>
+                    <div class="stat-change success">
+                        <i class="fas fa-chart-line"></i> Across <?php echo $selected_dispenser ? 'Selected Dispenser' : 'All Machines'; ?>
+                    </div>
                 </div>
             </div>
-            <div class="stat-card danger">
-                <div class="stat-title">Daily Sales</div>
-                <div class="stat-value"><?php echo number_format($daily_sales_value, 2); ?> PHP</div>
-                <div class="stat-change danger">
-                    <i class="fas fa-calendar-day"></i> Today's Revenue
+            <div class="stat-card">
+                <div class="stat-icon"><i class="fas fa-calendar-day"></i></div>
+                <div class="stat-content">
+                    <div class="stat-title">Daily Sales</div>
+                    <div class="stat-value"><?php echo number_format($daily_sales_value, 2); ?> PHP</div>
+                    <div class="stat-change success">
+                        <i class="fas fa-sun"></i> Today's Revenue
+                    </div>
                 </div>
             </div>
-            <div class="stat-card success">
-                <div class="stat-title">Hourly Sales</div>
-                <div class="stat-value"><?php echo number_format($hourly_sales_value, 2); ?> PHP</div>
-                <div class="stat-change success">
-                    <i class="fas fa-clock"></i> Today's Hourly Total
+            <div class="stat-card">
+                <div class="stat-icon"><i class="fas fa-clock"></i></div>
+                <div class="stat-content">
+                    <div class="stat-title">Hourly Sales</div>
+                    <div class="stat-value"><?php echo number_format($hourly_sales_value, 2); ?> PHP</div>
+                    <div class="stat-change success">
+                        <i class="fas fa-chart-bar"></i> Today's Hourly Total
+                    </div>
+                </div>
+            </div>
+            <div class="stat-card">
+                <div class="stat-icon"><i class="fas fa-coins"></i></div>
+                <div class="stat-content">
+                    <div class="stat-title">Total Transactions</div>
+                    <div class="stat-value"><?php echo number_format(array_sum(array_column($coin_summary, 'transaction_count'))); ?></div>
+                    <div class="stat-change success">
+                        <i class="fas fa-exchange-alt"></i> All Coin Types
+                    </div>
                 </div>
             </div>
         </div>

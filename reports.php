@@ -151,7 +151,7 @@ $water_consumption = $pdo->query("
     ORDER BY total_water_dispensed DESC
 ")->fetchAll();
 
-// Calculate summary statistics
+// Calculate summary statistics for stat cards
 $transactionSummary = [
     'total_transactions' => count($transactions),
     'total_amount' => array_sum(array_column($transactions, 'amount_dispensed')),
@@ -414,6 +414,113 @@ function generateCSVReport($title, $columns, $data, $machineFilter, $timeFilter,
 ?>
 <link rel="stylesheet" href="assets/css/reports.css">
 <style>
+/* Stat Cards Styles */
+.stats-grid {
+    display: grid;
+    grid-template-columns: repeat(4, 1fr);
+    gap: 20px;
+    margin-bottom: 30px;
+}
+
+.stat-card {
+    background: white;
+    border-radius: 12px;
+    padding: 24px;
+    box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+    border: 1px solid #e2e8f0;
+    transition: all 0.3s ease;
+    display: flex;
+    align-items: center;
+    gap: 16px;
+}
+
+.stat-card:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 8px 15px rgba(0, 0, 0, 0.15);
+}
+
+.stat-icon {
+    width: 60px;
+    height: 60px;
+    border-radius: 12px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 24px;
+    color: white;
+}
+
+.stat-content {
+    flex: 1;
+}
+
+.stat-title {
+    font-size: 14px;
+    font-weight: 600;
+    color: #64748b;
+    margin-bottom: 8px;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+}
+
+.stat-value {
+    font-size: 28px;
+    font-weight: 700;
+    color: #1e293b;
+    margin-bottom: 8px;
+    line-height: 1;
+}
+
+.stat-change {
+    font-size: 12px;
+    font-weight: 600;
+    display: flex;
+    align-items: center;
+    gap: 4px;
+}
+
+.stat-change.success {
+    color: #059669;
+}
+
+/* Stat card colors */
+.stat-card:nth-child(1) .stat-icon {
+    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+}
+
+.stat-card:nth-child(2) .stat-icon {
+    background: linear-gradient(135deg, #4facfe 0%, #00f2fe 100%);
+}
+
+.stat-card:nth-child(3) .stat-icon {
+    background: linear-gradient(135deg, #43e97b 0%, #38f9d7 100%);
+}
+
+.stat-card:nth-child(4) .stat-icon {
+    background: linear-gradient(135deg, #fa709a 0%, #fee140 100%);
+}
+
+/* Responsive design */
+@media (max-width: 1200px) {
+    .stats-grid {
+        grid-template-columns: repeat(2, 1fr);
+    }
+}
+
+@media (max-width: 768px) {
+    .stats-grid {
+        grid-template-columns: 1fr;
+    }
+    
+    .stat-card {
+        padding: 20px;
+    }
+    
+    .stat-value {
+        font-size: 24px;
+    }
+}
+
 /* Print-specific styles */
 @media print {
     body * {
@@ -436,7 +543,8 @@ function generateCSVReport($title, $columns, $data, $machineFilter, $timeFilter,
     .filter-info,
     .btn,
     .modal,
-    .error-message {
+    .error-message,
+    .stats-grid {
         display: none !important;
     }
     .report-summary {
@@ -478,9 +586,53 @@ function generateCSVReport($title, $columns, $data, $machineFilter, $timeFilter,
 <div class="content-area">
     <div class="content-wrapper">
         <div class="content-header">
-            <h1 class="content-title">Reports</h1>
+            <h1 class="content-title">Reports Dashboard</h1>
             <div class="content-actions">
                 <!-- Download buttons will be added via JavaScript -->
+            </div>
+        </div>
+        
+        <!-- Stat Cards Section -->
+        <div class="stats-grid">
+            <div class="stat-card">
+                <div class="stat-icon"><i class="fas fa-exchange-alt"></i></div>
+                <div class="stat-content">
+                    <div class="stat-title">Total Transactions</div>
+                    <div class="stat-value"><?php echo number_format($transactionSummary['total_transactions']); ?></div>
+                    <div class="stat-change success">
+                        <i class="fas fa-chart-line"></i> <?php echo htmlspecialchars($dateRangeDisplay); ?>
+                    </div>
+                </div>
+            </div>
+            <div class="stat-card">
+                <div class="stat-icon"><i class="fas fa-tint"></i></div>
+                <div class="stat-content">
+                    <div class="stat-title">Water Dispensed</div>
+                    <div class="stat-value"><?php echo number_format($transactionSummary['total_amount'], 2); ?>L</div>
+                    <div class="stat-change success">
+                        <i class="fas fa-water"></i> Total Volume
+                    </div>
+                </div>
+            </div>
+            <div class="stat-card">
+                <div class="stat-icon"><i class="fas fa-coins"></i></div>
+                <div class="stat-content">
+                    <div class="stat-title">Total Revenue</div>
+                    <div class="stat-value">₱<?php echo number_format($transactionSummary['total_value'], 2); ?></div>
+                    <div class="stat-change success">
+                        <i class="fas fa-money-bill-wave"></i> Collected
+                    </div>
+                </div>
+            </div>
+            <div class="stat-card">
+                <div class="stat-icon"><i class="fas fa-cogs"></i></div>
+                <div class="stat-content">
+                    <div class="stat-title">Active Machines</div>
+                    <div class="stat-value"><?php echo $machineSummary['active_machines']; ?>/<?php echo $machineSummary['total_machines']; ?></div>
+                    <div class="stat-change success">
+                        <i class="fas fa-microchip"></i> Operational
+                    </div>
+                </div>
             </div>
         </div>
         

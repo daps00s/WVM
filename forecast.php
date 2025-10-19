@@ -289,6 +289,100 @@ $conn->close();
 ?>
 <link rel="stylesheet" href="assets/css/forecast.css">
 <style>
+/* Stat Cards Styles */
+.stats-grid {
+    display: grid;
+    grid-template-columns: repeat(4, 1fr);
+    gap: 20px;
+    margin-bottom: 30px;
+}
+
+.stat-card {
+    background: white;
+    border-radius: 12px;
+    padding: 24px;
+    box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+    border: 1px solid #e2e8f0;
+    transition: all 0.3s ease;
+    display: flex;
+    align-items: center;
+    gap: 16px;
+}
+
+.stat-card:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 8px 15px rgba(0, 0, 0, 0.15);
+}
+
+.stat-icon {
+    width: 60px;
+    height: 60px;
+    border-radius: 12px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 24px;
+    color: white;
+}
+
+.stat-content {
+    flex: 1;
+}
+
+.stat-title {
+    font-size: 14px;
+    font-weight: 600;
+    color: #64748b;
+    margin-bottom: 8px;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+}
+
+.stat-value {
+    font-size: 28px;
+    font-weight: 700;
+    color: #1e293b;
+    margin-bottom: 8px;
+    line-height: 1;
+}
+
+.stat-change {
+    font-size: 12px;
+    font-weight: 600;
+    display: flex;
+    align-items: center;
+    gap: 4px;
+}
+
+.stat-change.success {
+    color: #059669;
+}
+
+.stat-change.warning {
+    color: #f59e0b;
+}
+
+.stat-change.danger {
+    color: #ef4444;
+}
+
+/* Stat card colors */
+.stat-card:nth-child(1) .stat-icon {
+    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+}
+
+.stat-card:nth-child(2) .stat-icon {
+    background: linear-gradient(135deg, #4facfe 0%, #00f2fe 100%);
+}
+
+.stat-card:nth-child(3) .stat-icon {
+    background: linear-gradient(135deg, #f093fb 0%, #f5576c 100%);
+}
+
+.stat-card:nth-child(4) .stat-icon {
+    background: linear-gradient(135deg, #43e97b 0%, #38f9d7 100%);
+}
+
 .explanation-grid {
     display: grid;
     grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
@@ -319,34 +413,6 @@ $conn->close();
     margin: 5px 0;
 }
 
-.metrics-dashboard {
-    display: grid;
-    grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
-    gap: 15px;
-    margin: 20px 0;
-}
-
-.metric-card {
-    background: white;
-    border: 1px solid #e9ecef;
-    border-radius: 8px;
-    padding: 15px;
-    text-align: center;
-    box-shadow: 0 2px 4px rgba(0,0,0,0.05);
-}
-
-.metric-value {
-    font-size: 24px;
-    font-weight: bold;
-    color: #2c3e50;
-    margin: 5px 0;
-}
-
-.metric-label {
-    font-size: 14px;
-    color: #6c757d;
-}
-
 .forecast-methods {
     background: #e8f4fd;
     border: 1px solid #b6d7f7;
@@ -367,6 +433,27 @@ $conn->close();
 .accuracy-high { background: #d4edda; color: #155724; }
 .accuracy-medium { background: #fff3cd; color: #856404; }
 .accuracy-low { background: #f8d7da; color: #721c24; }
+
+/* Responsive design */
+@media (max-width: 1200px) {
+    .stats-grid {
+        grid-template-columns: repeat(2, 1fr);
+    }
+}
+
+@media (max-width: 768px) {
+    .stats-grid {
+        grid-template-columns: 1fr;
+    }
+    
+    .stat-card {
+        padding: 20px;
+    }
+    
+    .stat-value {
+        font-size: 24px;
+    }
+}
 </style>
 
 <div class="content-area">
@@ -396,24 +483,47 @@ $conn->close();
             </div>
         </div>
 
-        <!-- Key Metrics Dashboard -->
-        <div class="metrics-dashboard">
-            <div class="metric-card">
-                <div class="metric-label">Total Historical Usage</div>
-                <div class="metric-value"><?= number_format($total_historical, 0) ?>L</div>
+        <!-- Updated Stats Grid with 4 Cards -->
+        <div class="stats-grid">
+            <div class="stat-card">
+                <div class="stat-icon"><i class="fas fa-tint"></i></div>
+                <div class="stat-content">
+                    <div class="stat-title">Total Historical Usage</div>
+                    <div class="stat-value"><?= number_format($total_historical, 0) ?>L</div>
+                    <div class="stat-change success">
+                        <i class="fas fa-chart-line"></i> Last <?= $period === '7days' ? '7 Days' : ($period === '30days' ? '30 Days' : 'Period') ?>
+                    </div>
+                </div>
             </div>
-            <div class="metric-card">
-                <div class="metric-label">Average Daily</div>
-                <div class="metric-value"><?= number_format($average_daily, 1) ?>L</div>
+            <div class="stat-card">
+                <div class="stat-icon"><i class="fas fa-chart-bar"></i></div>
+                <div class="stat-content">
+                    <div class="stat-title">Average Daily</div>
+                    <div class="stat-value"><?= number_format($average_daily, 1) ?>L</div>
+                    <div class="stat-change success">
+                        <i class="fas fa-water"></i> Per Day Average
+                    </div>
+                </div>
             </div>
-            <div class="metric-card">
-                <div class="metric-label">Peak Demand</div>
-                <div class="metric-value"><?= number_format($peak_demand, 1) ?>L</div>
+            <div class="stat-card">
+                <div class="stat-icon"><i class="fas fa-mountain"></i></div>
+                <div class="stat-content">
+                    <div class="stat-title">Peak Demand</div>
+                    <div class="stat-value"><?= number_format($peak_demand, 1) ?>L</div>
+                    <div class="stat-change warning">
+                        <i class="fas fa-fire"></i> Highest Usage
+                    </div>
+                </div>
             </div>
-            <div class="metric-card">
-                <div class="metric-label">Current Trend</div>
-                <div class="metric-value" style="color: <?= $current_trend === 'increasing' ? '#27ae60' : ($current_trend === 'decreasing' ? '#e74c3c' : '#f39c12') ?>">
-                    <?= ucfirst($current_trend) ?>
+            <div class="stat-card">
+                <div class="stat-icon"><i class="fas fa-trending-up"></i></div>
+                <div class="stat-content">
+                    <div class="stat-title">Current Trend</div>
+                    <div class="stat-value"><?= ucfirst($current_trend) ?></div>
+                    <div class="stat-change <?= $current_trend === 'increasing' ? 'success' : ($current_trend === 'decreasing' ? 'danger' : 'warning') ?>">
+                        <i class="fas fa-arrow-<?= $current_trend === 'increasing' ? 'up' : ($current_trend === 'decreasing' ? 'down' : 'right') ?>"></i> 
+                        <?= $current_trend === 'increasing' ? 'Growing' : ($current_trend === 'decreasing' ? 'Declining' : 'Stable') ?>
+                    </div>
                 </div>
             </div>
         </div>

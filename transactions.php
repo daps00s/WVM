@@ -44,25 +44,154 @@ $transactions = $transactions->fetchAll();
 
 // Get all machines for filter
 $machines = $pdo->query("SELECT dispenser_id, Description FROM dispenser ORDER BY Description")->fetchAll();
+
+// Get statistics for the stat cards
+$total_transactions = $pdo->query("SELECT COUNT(*) as total FROM transaction WHERE DATE(DateAndTime) BETWEEN '$startDate' AND '$endDate'")->fetch();
+$total_volume = $pdo->query("SELECT COALESCE(SUM(amount_dispensed), 0) as total FROM transaction WHERE DATE(DateAndTime) BETWEEN '$startDate' AND '$endDate'")->fetch();
+$total_revenue = $pdo->query("SELECT COALESCE(SUM(CAST(REGEXP_REPLACE(coin_type, '[^0-9]', '') AS UNSIGNED)), 0) as total FROM transaction WHERE DATE(DateAndTime) BETWEEN '$startDate' AND '$endDate'")->fetch();
+$active_machines = $pdo->query("SELECT COUNT(DISTINCT dispenser_id) as total FROM transaction WHERE DATE(DateAndTime) BETWEEN '$startDate' AND '$endDate'")->fetch();
 ?>
 <link rel="stylesheet" href="assets/css/transactions.css">
+<style>
+/* Stat Cards Styles */
+.stats-grid {
+    display: grid;
+    grid-template-columns: repeat(4, 1fr);
+    gap: 20px;
+    margin-bottom: 30px;
+}
+
+.stat-card {
+    background: white;
+    border-radius: 12px;
+    padding: 24px;
+    box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+    border: 1px solid #e2e8f0;
+    transition: all 0.3s ease;
+    display: flex;
+    align-items: center;
+    gap: 16px;
+}
+
+.stat-card:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 8px 15px rgba(0, 0, 0, 0.15);
+}
+
+.stat-icon {
+    width: 60px;
+    height: 60px;
+    border-radius: 12px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 24px;
+    color: white;
+}
+
+.stat-content {
+    flex: 1;
+}
+
+.stat-title {
+    font-size: 14px;
+    font-weight: 600;
+    color: #64748b;
+    margin-bottom: 8px;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+}
+
+.stat-value {
+    font-size: 28px;
+    font-weight: 700;
+    color: #1e293b;
+    margin-bottom: 8px;
+    line-height: 1;
+}
+
+.stat-change {
+    font-size: 12px;
+    font-weight: 600;
+    display: flex;
+    align-items: center;
+    gap: 4px;
+}
+
+.stat-change.success {
+    color: #059669;
+}
+
+/* Stat card colors */
+.stat-card:nth-child(1) .stat-icon {
+    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+}
+
+.stat-card:nth-child(2) .stat-icon {
+    background: linear-gradient(135deg, #4facfe 0%, #00f2fe 100%);
+}
+
+.stat-card:nth-child(3) .stat-icon {
+    background: linear-gradient(135deg, #43e97b 0%, #38f9d7 100%);
+}
+
+.stat-card:nth-child(4) .stat-icon {
+    background: linear-gradient(135deg, #fa709a 0%, #fee140 100%);
+}
+
+/* Responsive design */
+@media (max-width: 1200px) {
+    .stats-grid {
+        grid-template-columns: repeat(2, 1fr);
+    }
+}
+
+@media (max-width: 768px) {
+    .stats-grid {
+        grid-template-columns: 1fr;
+    }
+    
+    .stat-card {
+        padding: 20px;
+    }
+    
+    .stat-value {
+        font-size: 24px;
+    }
+}
+</style>
+
 <div class="content-area">
     <div class="content-wrapper">
         <div class="content-header">
             <div class="content-title-group">
-                <h1 class="content-title">Transaction History (Last 30 Days)</h1>
-                <a href="accounting_and_calibration.php" class="btn-primary switch-mode-btn" title="Switch to Accounting and Calibration Mode">
-                    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-                        <path d="M22 12h-4l2 2-2 2m-2-2h-4"></path>
-                        <path d="M2 12h4l-2-2 2-2m2 2h4"></path>
-                    </svg>
-                    <span class="btn-text">Switch to Accounting and Calibration</span>
-                </a>
+                <div>
+                    <div>
+                        <a href="accounting_and_calibration.php" class="btn-primary switch-mode-btn" title="Switch to Accounting and Calibration Mode">
+                            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                                <path d="M22 12h-4l2 2-2 2m-2-2h-4"></path>
+                                <path d="M2 12h4l-2-2 2-2m2 2h4"></path>
+                            </svg>
+                            <span class="btn-text">Switch to Accounting and Calibration</span>
+                        </a>
+                    </div>
+                    <h1 class="content-title">Transaction History (Last 30 Days)</h1>
+                </div>  
             </div>
             <div class="content-actions">
                 <div class="search-group">
                     <label for="searchInput" class="search-label">Search:</label>
                     <input type="text" id="searchInput" placeholder="Search transactions..." value="<?php echo htmlspecialchars($searchTerm); ?>">
+                </div>
+                <div class="date-filter">
+                    <select id="machineFilter">
+                        <option value="">All Machines</option>
+                        <?php foreach ($machines as $machine): ?>
+                        <option value="<?php echo $machine['dispenser_id']; ?>" data-name="<?php echo htmlspecialchars($machine['Description']); ?>" <?php echo $machineId == $machine['dispenser_id'] ? 'selected' : ''; ?>>
+                            <?php echo htmlspecialchars($machine['Description']); ?>
+                        </option>
+                        <?php endforeach; ?>
+                    </select>
                 </div>
                 <div class="rows-per-page">
                     <label for="rowsPerPage" class="rows-label">Rows per page:</label>
@@ -77,16 +206,47 @@ $machines = $pdo->query("SELECT dispenser_id, Description FROM dispenser ORDER B
             </div>
         </div>
 
-        <div class="filter-container">
-            <div class="date-filter">
-                <select id="machineFilter">
-                    <option value="">All Machines</option>
-                    <?php foreach ($machines as $machine): ?>
-                    <option value="<?php echo $machine['dispenser_id']; ?>" data-name="<?php echo htmlspecialchars($machine['Description']); ?>" <?php echo $machineId == $machine['dispenser_id'] ? 'selected' : ''; ?>>
-                        <?php echo htmlspecialchars($machine['Description']); ?>
-                    </option>
-                    <?php endforeach; ?>
-                </select>
+        <!-- Stat Cards Section -->
+        <div class="stats-grid">
+            <div class="stat-card">
+                <div class="stat-icon"><i class="fas fa-exchange-alt"></i></div>
+                <div class="stat-content">
+                    <div class="stat-title">Total Transactions</div>
+                    <div class="stat-value"><?php echo number_format($total_transactions['total']); ?></div>
+                    <div class="stat-change success">
+                        <i class="fas fa-chart-line"></i> Last 30 Days
+                    </div>
+                </div>
+            </div>
+            <div class="stat-card">
+                <div class="stat-icon"><i class="fas fa-tint"></i></div>
+                <div class="stat-content">
+                    <div class="stat-title">Total Volume</div>
+                    <div class="stat-value"><?php echo number_format($total_volume['total']); ?>ml</div>
+                    <div class="stat-change success">
+                        <i class="fas fa-water"></i> Water Dispensed
+                    </div>
+                </div>
+            </div>
+            <div class="stat-card">
+                <div class="stat-icon"><i class="fas fa-coins"></i></div>
+                <div class="stat-content">
+                    <div class="stat-title">Total Revenue</div>
+                    <div class="stat-value">₱<?php echo number_format($total_revenue['total']); ?></div>
+                    <div class="stat-change success">
+                        <i class="fas fa-money-bill-wave"></i> Collected
+                    </div>
+                </div>
+            </div>
+            <div class="stat-card">
+                <div class="stat-icon"><i class="fas fa-cogs"></i></div>
+                <div class="stat-content">
+                    <div class="stat-title">Active Machines</div>
+                    <div class="stat-value"><?php echo $active_machines['total']; ?></div>
+                    <div class="stat-change success">
+                        <i class="fas fa-microchip"></i> Processing
+                    </div>
+                </div>
             </div>
         </div>
 

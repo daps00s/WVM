@@ -1,7 +1,6 @@
 <?php
 date_default_timezone_set('Asia/Manila');
 $pageTitle = 'Accounting and Calibration Dashboard';
-
 require_once 'includes/header.php';
 require_once 'includes/db_connect.php';
 
@@ -45,8 +44,7 @@ if ($start_date > $end_date) {
                            FROM transaction 
                            WHERE dispenser_id = ? 
                            AND DateAndTime BETWEEN ? AND ? 
-                           ORDER BY DateAndTime DESC 
-                           LIMIT 50");
+                           ORDER BY DateAndTime DESC");
     $stmt->execute([$dispenser_id, $start_date . ' 00:00:00', $end_date . ' 23:59:59']);
     $transactions = $stmt->fetchAll(PDO::FETCH_ASSOC);
 
@@ -243,6 +241,7 @@ if ($start_date > $end_date) {
 }
 ?>
 
+<link rel="stylesheet" href="assets/css/accounting.css">
 <style>
 /* Accounting and Calibration Specific Styles */
 .accounting-container {
@@ -253,56 +252,354 @@ if ($start_date > $end_date) {
     background-color: #f8f9fa;
 }
 
-.discrepancy { 
-    background-color: #fee2e2; 
+.content-area {
+    width: 100%;
+    min-height: 100vh;
+    background-color: #f8f9fa;
 }
-.table-container { 
-    max-height: 400px; 
-    overflow-y: auto; 
-    border: 1px solid #e5e7eb;
+
+.content-wrapper {
+    max-width: 1400px;
+    margin: 0 auto;
+    padding: 20px;
+}
+
+.content-header {
+    display: flex;
+    justify-content: between;
+    align-items: center;
+    margin-bottom: 25px; /* Reduced from 30px to 25px */
+    flex-wrap: wrap;
+    gap: 20px;
+}
+
+.content-title {
+    font-size: 2rem;
+    font-weight: 700;
+    color: #1e293b;
+    margin: 0;
+}
+
+.content-actions {
+    display: flex;
+    align-items: center;
+    gap: 20px;
+    flex-wrap: wrap;
+}
+
+.search-group {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+}
+
+.search-label {
+    font-weight: 500;
+    color: #64748b;
+    white-space: nowrap;
+}
+
+#searchInput {
+    padding: 8px 12px;
+    border: 1px solid #d1d5db;
+    border-radius: 6px;
+    min-width: 250px;
+}
+
+.rows-per-page {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+}
+
+.rows-label {
+    font-weight: 500;
+    color: #64748b;
+    white-space: nowrap;
+}
+
+#rowsPerPage {
+    padding: 8px 12px;
+    border: 1px solid #d1d5db;
+    border-radius: 6px;
+}
+
+.btn-primary {
+    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+    color: white;
+    border: none;
+    padding: 10px 20px;
     border-radius: 8px;
+    cursor: pointer;
+    font-weight: 500;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    transition: all 0.3s ease;
 }
-.sticky-header { 
-    position: sticky; 
-    top: 0; 
-    z-index: 10; 
-    background-color: #f3f4f6;
+
+.btn-primary:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 4px 12px rgba(102, 126, 234, 0.4);
 }
-.transaction-row:hover { 
-    cursor: pointer; 
-    background-color: #f1f5f9; 
+
+.btn-secondary {
+    background: #6b7280;
+    color: white;
+    border: none;
+    padding: 10px 20px;
+    border-radius: 8px;
+    cursor: pointer;
+    font-weight: 500;
+    transition: all 0.3s ease;
 }
-.modal { 
-    display: none; 
-    position: fixed; 
-    z-index: 1050; 
-    left: 0; 
-    top: 0; 
-    width: 100%; 
-    height: 100%; 
-    overflow: auto; 
-    background-color: rgba(0,0,0,0.4); 
+
+.btn-secondary:hover {
+    background: #4b5563;
 }
-.modal-content { 
-    background-color: #fefefe; 
-    margin: 10% auto; 
-    padding: 20px; 
-    border: 1px solid #888; 
-    width: 90%; 
-    max-width: 500px; 
-    border-radius: 8px; 
+
+.btn-danger {
+    background: #ef4444;
+    color: white;
+    border: none;
+    padding: 10px 20px;
+    border-radius: 8px;
+    cursor: pointer;
+    font-weight: 500;
+    transition: all 0.3s ease;
+}
+
+.btn-danger:hover {
+    background: #dc2626;
+}
+
+/* Stat Cards Styles */
+.stats-grid {
+    display: grid;
+    grid-template-columns: repeat(4, 1fr);
+    gap: 20px;
+    margin-bottom: 25px; /* Reduced from 30px to 25px */
+}
+
+.stat-card {
+    background: white;
+    border-radius: 12px;
+    padding: 24px;
     box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+    border: 1px solid #e2e8f0;
+    transition: all 0.3s ease;
+    display: flex;
+    align-items: center;
+    gap: 16px;
+    cursor: pointer;
 }
-.modal-close { 
-    color: #aaa; 
-    float: right; 
-    font-size: 28px; 
-    font-weight: bold; 
-    cursor: pointer; 
+
+.stat-card:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 8px 15px rgba(0, 0, 0, 0.15);
+}
+
+.stat-icon {
+    width: 60px;
+    height: 60px;
+    border-radius: 12px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 24px;
+    color: white;
+}
+
+.stat-content {
+    flex: 1;
+}
+
+.stat-title {
+    font-size: 14px;
+    font-weight: 600;
+    color: #64748b;
+    margin-bottom: 8px;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+}
+
+.stat-value {
+    font-size: 28px;
+    font-weight: 700;
+    color: #1e293b;
+    margin-bottom: 8px;
     line-height: 1;
 }
-.modal-close:hover { 
-    color: #000; 
+
+.stat-change {
+    font-size: 12px;
+    font-weight: 600;
+    display: flex;
+    align-items: center;
+    gap: 4px;
+}
+
+.stat-change.success {
+    color: #059669;
+}
+
+.stat-change.warning {
+    color: #d97706;
+}
+
+.stat-change.danger {
+    color: #dc2626;
+}
+
+/* Stat card colors */
+.stat-card:nth-child(1) .stat-icon {
+    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+}
+
+.stat-card:nth-child(2) .stat-icon {
+    background: linear-gradient(135deg, #4facfe 0%, #00f2fe 100%);
+}
+
+.stat-card:nth-child(3) .stat-icon {
+    background: linear-gradient(135deg, #f093fb 0%, #f5576c 100%);
+}
+
+.stat-card:nth-child(4) .stat-icon {
+    background: linear-gradient(135deg, #43e97b 0%, #38f9d7 100%);
+}
+
+/* Table Styles */
+.table-container {
+    background: white;
+    border-radius: 12px;
+    box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+    overflow: hidden;
+    margin-bottom: 30px;
+}
+
+.table-wrapper {
+    overflow-x: auto;
+    max-height: 400px; /* Fixed height for scrollable area */
+    overflow-y: auto;
+}
+
+.data-table {
+    width: 100%;
+    border-collapse: collapse;
+}
+
+.data-table th {
+    background: #f8fafc;
+    padding: 12px 16px;
+    text-align: left;
+    font-weight: 600;
+    color: #374151;
+    border-bottom: 1px solid #e5e7eb;
+    position: sticky;
+    top: 0;
+    z-index: 10;
+}
+
+.data-table td {
+    padding: 12px 16px;
+    border-bottom: 1px solid #f1f5f9;
+}
+
+.data-table tbody tr:hover {
+    background: #f8fafc;
+}
+
+.discrepancy { 
+    background-color: #fee2e2 !important; 
+}
+
+.status-badge {
+    padding: 4px 8px;
+    border-radius: 4px;
+    font-size: 12px;
+    font-weight: 500;
+}
+
+.status-success {
+    background: #dcfce7;
+    color: #166534;
+}
+
+.status-error {
+    background: #fee2e2;
+    color: #dc2626;
+}
+
+.action-buttons {
+    display: flex;
+    gap: 8px;
+}
+
+.btn-action {
+    padding: 6px 10px;
+    border: none;
+    border-radius: 6px;
+    cursor: pointer;
+    transition: all 0.2s ease;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.btn-action.edit {
+    background: #dbeafe;
+    color: #1d4ed8;
+}
+
+.btn-action.edit:hover {
+    background: #bfdbfe;
+}
+
+.btn-action.delete {
+    background: #fee2e2;
+    color: #dc2626;
+}
+
+.btn-action.delete:hover {
+    background: #fecaca;
+}
+
+.btn-action.view {
+    background: #dcfce7;
+    color: #16a34a;
+}
+
+.btn-action.view:hover {
+    background: #bbf7d0;
+}
+
+/* Filter Section - Moved 5px higher */
+.filter-section {
+    background: white;
+    padding: 20px;
+    border-radius: 12px;
+    box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+    margin-bottom: 25px; /* Reduced from 30px to 25px */
+    margin-top: -5px; /* Move section 5px higher */
+}
+
+.filter-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+    gap: 15px;
+    align-items: end;
+}
+
+.filter-buttons {
+    display: flex;
+    gap: 10px;
+    align-items: end;
+}
+
+.filter-buttons .btn-primary,
+.filter-buttons .btn-secondary {
+    flex: 1;
+    min-height: 42px; /* Ensure consistent button height */
 }
 
 /* Tab Navigation */
@@ -342,99 +639,175 @@ if ($start_date > $end_date) {
     display: block;
 }
 
-/* Tailwind-like utility classes */
-.max-w-7xl { max-width: 80rem; }
-.mx-auto { margin-left: auto; margin-right: auto; }
-.px-4 { padding-left: 1rem; padding-right: 1rem; }
-.py-6 { padding-top: 1.5rem; padding-bottom: 1.5rem; }
-.bg-white { background-color: #ffffff; }
-.bg-blue-700 { background-color: #1d4ed8; }
-.bg-red-600 { background-color: #dc2626; }
-.bg-gray-500 { background-color: #6b7280; }
-.bg-gray-200 { background-color: #e5e7eb; }
-.text-white { color: #ffffff; }
-.text-blue-600 { color: #2563eb; }
-.text-green-600 { color: #059669; }
-.text-red-600 { color: #dc2626; }
-.text-gray-600 { color: #4b5563; }
-.text-gray-700 { color: #374151; }
-.text-gray-800 { color: #1f2937; }
-.text-blue-100 { color: #dbeafe; }
-.rounded-lg { border-radius: 0.5rem; }
-.rounded-md { border-radius: 0.375rem; }
-.shadow-lg { box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.1); }
-.shadow-md { box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1); }
-.border { border-width: 1px; border-color: #e5e7eb; }
-.border-gray-300 { border-color: #d1d5db; }
-.grid { display: grid; }
-.grid-cols-1 { grid-template-columns: repeat(1, minmax(0, 1fr)); }
-.gap-4 { gap: 1rem; }
-.mb-6 { margin-bottom: 1.5rem; }
-.mb-4 { margin-bottom: 1rem; }
-.mt-4 { margin-top: 1rem; }
-.mt-1 { margin-top: 0.25rem; }
-.mt-2 { margin-top: 0.5rem; }
-.mt-6 { margin-top: 1.5rem; }
-.p-2 { padding: 0.5rem; }
-.p-4 { padding: 1rem; }
-.p-6 { padding: 1.5rem; }
-.block { display: block; }
-.w-full { width: 100%; }
-.h-48 { height: 12rem; }
-.h-64 { height: 16rem; }
-.text-sm { font-size: 0.875rem; }
-.text-base { font-size: 1rem; }
-.text-lg { font-size: 1.125rem; }
-.text-xl { font-size: 1.25rem; }
-.text-2xl { font-size: 1.5rem; }
-.text-3xl { font-size: 1.875rem; }
-.font-medium { font-weight: 500; }
-.font-semibold { font-weight: 600; }
-.font-bold { font-weight: 700; }
-.cursor-pointer { cursor: pointer; }
-.overflow-x-auto { overflow-x: auto; }
-.overflow-y-auto { overflow-y: auto; }
-.list-disc { list-style-type: disc; }
-.list-decimal { list-style-type: decimal; }
-.pl-5 { padding-left: 1.25rem; }
-.flex { display: flex; }
-.items-center { align-items: center; }
-.items-end { align-items: flex-end; }
-.justify-between { justify-content: space-between; }
-.gap-2 { gap: 0.5rem; }
-.relative { position: relative; }
-.text-center { text-align: center; }
-
-/* Focus styles */
-.focus\:ring-2:focus { 
-    --tw-ring-offset-shadow: var(--tw-ring-inset) 0 0 0 var(--tw-ring-offset-width) var(--tw-ring-offset-color);
-    --tw-ring-shadow: var(--tw-ring-inset) 0 0 0 calc(2px + var(--tw-ring-offset-width)) var(--tw-ring-color);
-    box-shadow: var(--tw-ring-offset-shadow), var(--tw-ring-shadow), var(--tw-shadow, 0 0 #0000);
+/* Modal Styles */
+.modal {
+    display: none;
+    position: fixed;
+    z-index: 1050;
+    left: 0;
+    top: 0;
+    width: 100%;
+    height: 100%;
+    overflow: auto;
+    background-color: rgba(0,0,0,0.4);
 }
-.focus\:ring-blue-500:focus { --tw-ring-color: #3b82f6; }
 
-/* Hover styles */
-.hover\:bg-red-700:hover { background-color: #b91c1c; }
-.hover\:bg-blue-700:hover { background-color: #1d4ed8; }
-.hover\:bg-gray-600:hover { background-color: #4b5563; }
+.modal-content {
+    background-color: #fefefe;
+    margin: 10% auto;
+    padding: 20px;
+    border: 1px solid #888;
+    width: 90%;
+    max-width: 500px;
+    border-radius: 8px;
+    box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+}
+
+.modal-header {
+    display: flex;
+    justify-content: between;
+    align-items: center;
+    margin-bottom: 20px;
+    padding-bottom: 15px;
+    border-bottom: 1px solid #e5e7eb;
+}
+
+.modal-header h2 {
+    margin: 0;
+    font-size: 1.5rem;
+    color: #1e293b;
+}
+
+.close-modal {
+    color: #6b7280;
+    float: right;
+    font-size: 28px;
+    font-weight: bold;
+    cursor: pointer;
+    line-height: 1;
+}
+
+.close-modal:hover {
+    color: #374151;
+}
+
+.modal-body {
+    margin-bottom: 20px;
+}
+
+.input-group {
+    margin-bottom: 15px;
+}
+
+.input-group label {
+    display: block;
+    margin-bottom: 5px;
+    font-weight: 500;
+    color: #374151;
+}
+
+.input-group input,
+.input-group select,
+.input-group textarea {
+    width: 100%;
+    padding: 8px 12px;
+    border: 1px solid #d1d5db;
+    border-radius: 6px;
+    font-size: 14px;
+}
+
+.input-group textarea {
+    resize: vertical;
+    min-height: 80px;
+}
+
+.modal-footer {
+    display: flex;
+    justify-content: flex-end;
+    gap: 10px;
+    padding-top: 15px;
+    border-top: 1px solid #e5e7eb;
+}
+
+/* Notification Toast */
+.notification-toast {
+    position: fixed;
+    top: 20px;
+    right: 20px;
+    padding: 12px 20px;
+    border-radius: 8px;
+    color: white;
+    font-weight: 500;
+    z-index: 1060;
+    animation: slideIn 0.3s ease;
+}
+
+.notification-toast.success {
+    background: #10b981;
+}
+
+.notification-toast.error {
+    background: #ef4444;
+}
+
+@keyframes slideIn {
+    from {
+        transform: translateX(100%);
+        opacity: 0;
+    }
+    to {
+        transform: translateX(0);
+        opacity: 1;
+    }
+}
+
+/* Chart Containers */
+.chart-container {
+    background: white;
+    padding: 20px;
+    border-radius: 12px;
+    box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+    margin-bottom: 20px;
+}
 
 /* Responsive design */
-@media (min-width: 640px) {
-    .sm\:grid-cols-2 { grid-template-columns: repeat(2, minmax(0, 1fr)); }
-    .sm\:text-3xl { font-size: 1.875rem; }
-    .sm\:text-base { font-size: 1rem; }
-    .sm\:text-sm { font-size: 0.875rem; }
-    .sm\:p-6 { padding: 1.5rem; }
-    .sm\:h-64 { height: 16rem; }
-}
-
-@media (min-width: 1024px) {
-    .lg\:grid-cols-4 { grid-template-columns: repeat(4, minmax(0, 1fr)); }
-    .lg\:grid-cols-2 { grid-template-columns: repeat(2, minmax(0, 1fr)); }
-    .lg\:px-8 { padding-left: 2rem; padding-right: 2rem; }
+@media (max-width: 1200px) {
+    .stats-grid {
+        grid-template-columns: repeat(2, 1fr);
+    }
 }
 
 @media (max-width: 768px) {
+    .stats-grid {
+        grid-template-columns: 1fr;
+    }
+    
+    .content-header {
+        flex-direction: column;
+        align-items: stretch;
+    }
+    
+    .content-actions {
+        justify-content: stretch;
+    }
+    
+    .search-group,
+    .rows-per-page {
+        flex: 1;
+    }
+    
+    #searchInput {
+        min-width: auto;
+    }
+    
+    .stat-card {
+        padding: 20px;
+    }
+    
+    .stat-value {
+        font-size: 24px;
+    }
+    
     .accounting-container {
         padding: 15px;
     }
@@ -444,7 +817,7 @@ if ($start_date > $end_date) {
         width: 95%;
     }
     
-    .table-container {
+    .table-wrapper {
         max-height: 300px;
     }
     
@@ -452,38 +825,115 @@ if ($start_date > $end_date) {
         padding: 10px 16px;
         font-size: 14px;
     }
+    
+    .filter-grid {
+        grid-template-columns: 1fr;
+    }
+    
+    .filter-buttons {
+        flex-direction: column;
+    }
 }
 
 @media (max-width: 640px) {
-    .grid-cols-2 { grid-template-columns: 1fr; }
-    .text-2xl { font-size: 1.25rem; }
-    .text-xl { font-size: 1.125rem; }
-    canvas { height: 200px !important; }
+    .action-buttons {
+        flex-direction: column;
+    }
+    
+    .btn-action {
+        width: 100%;
+    }
+    
+    .table-wrapper {
+        max-height: 250px;
+    }
 }
 </style>
 
-<div class="accounting-container">
-    <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6">
-        <!-- Header -->
-        <header class="bg-blue-700 text-white p-4 rounded-lg shadow-lg mb-6 relative">
-            <div class="flex items-center justify-between">
-                <div class="flex items-center gap-4">
-                    <div>
-                        <h1 class="text-2xl sm:text-3xl font-bold">Accounting and Calibration Dashboard</h1>
-                        <p class="text-sm sm:text-base text-blue-100">Monitor financial integrity and machine performance</p>
+<div class="content-area">
+    <div class="content-wrapper">
+        <!-- Notification Toast -->
+        <?php if (isset($reconciliation_message)): ?>
+        <div class="notification-toast success">
+            <?= $reconciliation_message ?>
+        </div>
+        <?php endif; ?>
+        
+        <div class="content-header">
+            <h1 class="content-title">Accounting and Calibration Dashboard</h1>
+            <div class="content-actions">
+                <div class="search-group">
+                    <label for="searchInput" class="search-label">Search:</label>
+                    <input type="text" id="searchInput" placeholder="Search transactions...">
+                </div>
+                <div class="rows-per-page">
+                    <label for="rowsPerPage" class="rows-label">Rows per page:</label>
+                    <select id="rowsPerPage">
+                        <option value="5">5</option>
+                        <option value="10">10</option>
+                        <option value="25" selected>25</option>
+                        <option value="50">50</option>
+                    </select>
+                </div>
+                <div>
+                    <a href="transactions.php" class="btn-primary">
+                        <i class="fas fa-exchange-alt"></i> <span class="btn-text">Switch to Transactions</span>
+                    </a>
+                </div>
+            </div>
+        </div>
+
+        <!-- Stats Grid -->
+        <div class="stats-grid">
+            <div class="stat-card" onclick="filterTable('revenue')">
+                <div class="stat-icon"><i class="fas fa-coins"></i></div>
+                <div class="stat-content">
+                    <div class="stat-title">Total Revenue</div>
+                    <div class="stat-value">₱<?= number_format($total_revenue, 2) ?></div>
+                    <div class="stat-change success">
+                        <i class="fas fa-money-bill-wave"></i> Collected
                     </div>
                 </div>
             </div>
-        </header>
+            <div class="stat-card" onclick="filterTable('water')">
+                <div class="stat-icon"><i class="fas fa-tint"></i></div>
+                <div class="stat-content">
+                    <div class="stat-title">Water Dispensed</div>
+                    <div class="stat-value"><?= number_format($total_dispensed, 2) ?>L</div>
+                    <div class="stat-change success">
+                        <i class="fas fa-water"></i> Total Volume
+                    </div>
+                </div>
+            </div>
+            <div class="stat-card" onclick="filterTable('discrepancies')">
+                <div class="stat-icon"><i class="fas fa-exclamation-triangle"></i></div>
+                <div class="stat-content">
+                    <div class="stat-title">Calibration Issues</div>
+                    <div class="stat-value"><?= count($discrepancies) ?></div>
+                    <div class="stat-change <?= count($discrepancies) > 0 ? 'danger' : 'success' ?>">
+                        <i class="fas fa-chart-line"></i> <?= count($discrepancies) > 0 ? 'Needs Attention' : 'All Good' ?>
+                    </div>
+                </div>
+            </div>
+            <div class="stat-card" onclick="filterTable('cash')">
+                <div class="stat-icon"><i class="fas fa-balance-scale"></i></div>
+                <div class="stat-content">
+                    <div class="stat-title">Cash Accuracy</div>
+                    <div class="stat-value"><?= $cash_difference == 0 ? 'Balanced' : '₱' . number_format(abs($cash_difference), 2) ?></div>
+                    <div class="stat-change <?= $cash_difference == 0 ? 'success' : ($cash_difference > 0 ? 'warning' : 'danger') ?>">
+                        <i class="fas fa-calculator"></i> <?= $cash_difference == 0 ? 'Perfect Match' : ($cash_difference > 0 ? 'Surplus' : 'Shortage') ?>
+                    </div>
+                </div>
+            </div>
+        </div>
 
-        <!-- Filter Section -->
-        <section class="bg-white p-4 sm:p-6 rounded-lg shadow-md mb-6">
-            <h2 class="text-lg sm:text-xl font-semibold mb-4 text-gray-800">Filter Data</h2>
-            <form action="" method="GET" class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
-                <div>
-                    <label for="dispenser_id" class="block text-sm font-medium text-gray-700">Dispenser</label>
-                    <select name="dispenser_id" id="dispenser_id" onchange="this.form.submit()"
-                            class="mt-1 block w-full border-gray-300 rounded-md shadow-sm focus:ring-2 focus:ring-blue-500 sm:text-sm">
+        <!-- Filter Section - Moved 5px higher -->
+        <div class="filter-section">
+            <h2 style="margin-bottom: 20px; color: #1e293b;">Filter Data</h2>
+            <form action="" method="GET" class="filter-grid">
+                <div class="input-group">
+                    <label for="dispenser_id">Dispenser</label>
+                    <select name="dispenser_id" id="dispenser_id">
                         <?php foreach ($dispensers as $dispenser): ?>
                             <option value="<?= $dispenser['dispenser_id'] ?>"
                                     <?= $dispenser['dispenser_id'] == $dispenser_id ? 'selected' : '' ?>>
@@ -492,23 +942,21 @@ if ($start_date > $end_date) {
                         <?php endforeach; ?>
                     </select>
                 </div>
-                <div>
-                    <label for="start_date" class="block text-sm font-medium text-gray-700">Start Date</label>
-                    <input type="date" name="start_date" id="start_date" value="<?= htmlspecialchars($start_date) ?>"
-                           class="mt-1 block w-full border-gray-300 rounded-md shadow-sm focus:ring-2 focus:ring-blue-500 sm:text-sm">
+                <div class="input-group">
+                    <label for="start_date">Start Date</label>
+                    <input type="date" name="start_date" id="start_date" value="<?= htmlspecialchars($start_date) ?>">
                 </div>
-                <div>
-                    <label for="end_date" class="block text-sm font-medium text-gray-700">End Date</label>
-                    <input type="date" name="end_date" id="end_date" value="<?= htmlspecialchars($end_date) ?>"
-                           class="mt-1 block w-full border-gray-300 rounded-md shadow-sm focus:ring-2 focus:ring-blue-500 sm:text-sm">
+                <div class="input-group">
+                    <label for="end_date">End Date</label>
+                    <input type="date" name="end_date" id="end_date" value="<?= htmlspecialchars($end_date) ?>">
                 </div>
-                <div class="flex items-end gap-2">
-                    <button type="submit" class="w-full bg-blue-600 text-white px-4 py-2 rounded-md hover:bg-blue-700 sm:text-sm">Apply</button>
-                    <button type="button" onclick="window.location.href='?dispenser_id=27&start_date=<?= date('Y-m-d', strtotime('-7 days')) ?>&end_date=<?= date('Y-m-d') ?>'"
-                            class="w-full bg-gray-500 text-white px-4 py-2 rounded-md hover:bg-gray-600 sm:text-sm">Reset</button>
+                <div class="filter-buttons">
+                    <button type="submit" class="btn-primary">Apply Filters</button>
+                    <button type="button" onclick="window.location.href='?dispenser_id=27&start_date=<?= date('Y-m-d', strtotime('-7 days')) ?>&end_date=<?= date('Y-m-d') ?>'" 
+                            class="btn-secondary">Reset</button>
                 </div>
             </form>
-        </section>
+        </div>
 
         <!-- Tab Navigation -->
         <div class="tab-navigation">
@@ -520,438 +968,409 @@ if ($start_date > $end_date) {
 
         <!-- Overview Tab -->
         <div id="overview" class="tab-content active">
-            <!-- KPI Cards -->
-            <section class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 mb-6">
-                <div class="bg-white p-4 rounded-lg shadow-md">
-                    <h3 class="text-base font-semibold text-gray-700">Total Revenue</h3>
-                    <p class="text-xl sm:text-2xl font-bold text-blue-600">₱<?= number_format($total_revenue, 2) ?></p>
-                </div>
-                <div class="bg-white p-4 rounded-lg shadow-md">
-                    <h3 class="text-base font-semibold text-gray-700">Water Dispensed</h3>
-                    <p class="text-xl sm:text-2xl font-bold text-green-600"><?= number_format($total_dispensed, 2) ?> L</p>
-                </div>
-                <div class="bg-white p-4 rounded-lg shadow-md cursor-pointer" id="discrepancyCard">
-                    <h3 class="text-base font-semibold text-gray-700">Calibration Issues</h3>
-                    <p class="text-xl sm:text-2xl font-bold <?= count($discrepancies) > 0 ? 'text-red-600' : 'text-gray-600' ?>">
-                        <?= count($discrepancies) ?>
-                    </p>
-                </div>
-                <div class="bg-white p-4 rounded-lg shadow-md">
-                    <h3 class="text-base font-semibold text-gray-700">Cash Accuracy</h3>
-                    <p class="text-xl sm:text-2xl font-bold <?= $cash_difference == 0 ? 'text-green-600' : 'text-red-600' ?>">
-                        <?= $cash_difference == 0 ? 'Balanced' : '₱' . number_format(abs($cash_difference), 2) ?>
-                    </p>
-                </div>
-            </section>
-
-            <!-- Recent Transactions -->
-            <section class="bg-white p-4 sm:p-6 rounded-lg shadow-md mb-6">
-                <h2 class="text-lg sm:text-xl font-semibold mb-4 text-gray-800">Recent Transactions</h2>
-                <div class="mb-4">
-                    <input type="text" id="searchInput" placeholder="Search transactions (ID, coin type, water type)..."
-                           class="w-full border-gray-300 rounded-md shadow-sm p-2 focus:ring-2 focus:ring-blue-500 sm:text-sm">
-                </div>
-                <div class="table-container overflow-x-auto">
-                    <table class="w-full border-collapse text-sm">
+            <!-- Recent Transactions - Limited to 5 visible rows, scrollable for more -->
+            <div class="table-container">
+                <h2 style="padding: 20px 20px 0; margin: 0; color: #1e293b;">Recent Transactions</h2>
+                <p style="padding: 0 20px; margin: 5px 0 15px; color: #6b7280; font-size: 14px;">
+                    Showing <?= min(5, count($transactions)) ?> of <?= count($transactions) ?> transactions. Scroll to see more.
+                </p>
+                <div class="table-wrapper">
+                    <table class="data-table" id="transactionsTable">
                         <thead>
-                            <tr class="bg-gray-200 sticky-header">
-                                <th class="p-2 border text-left">ID</th>
-                                <th class="p-2 border text-left">Date & Time</th>
-                                <th class="p-2 border text-left">Coin</th>
-                                <th class="p-2 border text-left">Dispensed (L)</th>
-                                <th class="p-2 border text-left">Water Type</th>
-                                <th class="p-2 border text-left">Status</th>
+                            <tr>
+                                <th>ID</th>
+                                <th>Date & Time</th>
+                                <th>Coin Type</th>
+                                <th>Amount (₱)</th>
+                                <th>Dispensed (L)</th>
+                                <th>Expected (L)</th>
+                                <th>Water Type</th>
+                                <th>Status</th>
+                                <th>Actions</th>
                             </tr>
                         </thead>
-                        <tbody id="transactionTable">
-                            <?php foreach ($transactions as $transaction): ?>
-                                <tr class="transaction-row <?= in_array($transaction['transaction_id'], $discrepancies) ? 'discrepancy' : '' ?>"
-                                    data-transaction='{
-                                        "id": "<?= $transaction['transaction_id'] ?>",
-                                        "coin_type": "<?= htmlspecialchars($transaction['coin_type']) ?>",
-                                        "amount": "<?= number_format($transaction['amount_dispensed'], 2) ?>",
-                                        "expected": "<?= number_format($expected_amounts[$transaction['coin_type']] ?? 0, 2) ?>",
-                                        "water_type": "<?= htmlspecialchars($transaction['water_type']) ?>",
-                                        "date": "<?= htmlspecialchars($transaction['formatted_date']) ?>"
-                                    }'>
-                                    <td class="p-2 border"><?= $transaction['transaction_id'] ?></td>
-                                    <td class="p-2 border"><?= htmlspecialchars($transaction['formatted_date']) ?></td>
-                                    <td class="p-2 border"><?= htmlspecialchars($transaction['coin_type']) ?></td>
-                                    <td class="p-2 border"><?= number_format($transaction['amount_dispensed'], 2) ?></td>
-                                    <td class="p-2 border"><?= htmlspecialchars($transaction['water_type']) ?></td>
-                                    <td class="p-2 border">
-                                        <?= in_array($transaction['transaction_id'], $discrepancies) ? 'Calibration Issue' : 'Normal' ?>
+                        <tbody>
+                            <?php 
+                            $display_count = 0;
+                            foreach ($transactions as $transaction): 
+                                $coin_value = $coin_values[$transaction['coin_type']] ?? 0;
+                                $expected = $expected_amounts[$transaction['coin_type']] ?? 0;
+                                $is_discrepancy = in_array($transaction['transaction_id'], $discrepancies);
+                                $display_count++;
+                            ?>
+                                <tr class="<?= $is_discrepancy ? 'discrepancy' : '' ?>" 
+                                    style="<?= $display_count > 5 ? '' : '' ?>">
+                                    <td><?= $transaction['transaction_id'] ?></td>
+                                    <td><?= htmlspecialchars($transaction['formatted_date']) ?></td>
+                                    <td><?= htmlspecialchars($transaction['coin_type']) ?></td>
+                                    <td>₱<?= number_format($coin_value, 2) ?></td>
+                                    <td><?= number_format($transaction['amount_dispensed'], 2) ?></td>
+                                    <td><?= number_format($expected, 2) ?></td>
+                                    <td><?= htmlspecialchars($transaction['water_type']) ?></td>
+                                    <td>
+                                        <span class="status-badge <?= $is_discrepancy ? 'status-error' : 'status-success' ?>">
+                                            <?= $is_discrepancy ? 'Calibration Issue' : 'Normal' ?>
+                                        </span>
+                                    </td>
+                                    <td>
+                                        <div class="action-buttons">
+                                            <button class="btn-action view" onclick="showTransactionDetails(<?= $transaction['transaction_id'] ?>)">
+                                                <i class="fas fa-eye"></i>
+                                            </button>
+                                        </div>
                                     </td>
                                 </tr>
                             <?php endforeach; ?>
+                            <?php if (empty($transactions)): ?>
+                                <tr>
+                                    <td colspan="9" style="text-align: center; padding: 20px; color: #6b7280;">
+                                        No transactions found for the selected criteria.
+                                    </td>
+                                </tr>
+                            <?php endif; ?>
                         </tbody>
                     </table>
                 </div>
-            </section>
+            </div>
 
             <!-- Calibration Overview -->
-            <section class="bg-white p-4 sm:p-6 rounded-lg shadow-md">
-                <h2 class="text-lg sm:text-xl font-semibold mb-4 text-gray-800">System Overview</h2>
-                <div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
+            <div class="chart-container">
+                <h2 style="margin-bottom: 20px; color: #1e293b;">Calibration Overview</h2>
+                <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 20px;">
                     <div>
                         <?= $calibration_message ?>
                         <?= $problem_details ?>
                     </div>
                     <div>
-                        <canvas id="calibrationChart" class="max-w-full h-48 sm:h-64"></canvas>
+                        <canvas id="calibrationChart" style="width: 100%; height: 300px;"></canvas>
                     </div>
                 </div>
-            </section>
+            </div>
         </div>
 
-        <!-- Accounting Tab - ENHANCED WITH CASH RECONCILIATION -->
+        <!-- Accounting Tab -->
         <div id="accounting" class="tab-content">
-            <section class="bg-white p-4 sm:p-6 rounded-lg shadow-md mb-6">
-                <h2 class="text-lg sm:text-xl font-semibold mb-4 text-gray-800">Cash Accounting Module</h2>
+            <div class="chart-container">
+                <h2 style="margin-bottom: 20px; color: #1e293b;">Cash Accounting Module</h2>
                 
                 <!-- Cash Reconciliation -->
-                <div class="mb-6">
-                    <h3 class="text-lg font-semibold mb-3 text-gray-800">Cash Reconciliation</h3>
-                    <div class="grid grid-cols-1 md:grid-cols-3 gap-4 mb-4">
-                        <div class="bg-blue-50 p-4 rounded-lg">
-                            <h4 class="text-sm font-medium text-blue-800">Expected Cash (Transactions)</h4>
-                            <p class="text-xl font-bold text-blue-600">₱<?= number_format($expected_cash, 2) ?></p>
-                            <p class="text-sm text-gray-600 mt-1">
+                <div style="margin-bottom: 30px;">
+                    <h3 style="margin-bottom: 15px; color: #374151;">Cash Reconciliation</h3>
+                    <div style="display: grid; grid-template-columns: repeat(3, 1fr); gap: 15px; margin-bottom: 20px;">
+                        <div style="background: #dbeafe; padding: 20px; border-radius: 8px;">
+                            <h4 style="font-size: 14px; color: #1e40af; margin-bottom: 10px;">Expected Cash (Transactions)</h4>
+                            <p style="font-size: 24px; font-weight: bold; color: #1e40af;">₱<?= number_format($expected_cash, 2) ?></p>
+                            <p style="font-size: 12px; color: #4b5563; margin-top: 10px;">
                                 1 Peso: <?= $coin_counts['1 Peso'] ?> coins<br>
                                 5 Peso: <?= $coin_counts['5 Peso'] ?> coins<br>
                                 10 Peso: <?= $coin_counts['10 Peso'] ?> coins
                             </p>
                         </div>
-                        <div class="bg-green-50 p-4 rounded-lg">
-                            <h4 class="text-sm font-medium text-green-800">Actual Cash Collected</h4>
-                            <p class="text-xl font-bold text-green-600">₱<?= number_format($actual_cash, 2) ?></p>
+                        <div style="background: #dcfce7; padding: 20px; border-radius: 8px;">
+                            <h4 style="font-size: 14px; color: #166534; margin-bottom: 10px;">Actual Cash Collected</h4>
+                            <p style="font-size: 24px; font-weight: bold; color: #166534;">₱<?= number_format($actual_cash, 2) ?></p>
                         </div>
-                        <div class="bg-<?= $cash_difference == 0 ? 'green' : 'red' ?>-50 p-4 rounded-lg">
-                            <h4 class="text-sm font-medium text-<?= $cash_difference == 0 ? 'green' : 'red' ?>-800">Cash Difference</h4>
-                            <p class="text-xl font-bold text-<?= $cash_difference == 0 ? 'green' : 'red' ?>-600">
+                        <div style="background: <?= $cash_difference == 0 ? '#dcfce7' : '#fef2f2' ?>; padding: 20px; border-radius: 8px;">
+                            <h4 style="font-size: 14px; color: <?= $cash_difference == 0 ? '#166534' : '#dc2626' ?>; margin-bottom: 10px;">Cash Difference</h4>
+                            <p style="font-size: 24px; font-weight: bold; color: <?= $cash_difference == 0 ? '#166534' : '#dc2626' ?>;">
                                 ₱<?= number_format(abs($cash_difference), 2) ?>
                             </p>
-                            <p class="text-sm text-<?= $cash_difference == 0 ? 'green' : 'red' ?>-600 mt-1">
+                            <p style="font-size: 12px; color: <?= $cash_difference == 0 ? '#166534' : '#dc2626' ?>; margin-top: 10px;">
                                 <?= $cash_difference > 0 ? 'Surplus' : ($cash_difference < 0 ? 'Shortage' : 'Balanced') ?>
                             </p>
                         </div>
                     </div>
 
                     <!-- Cash Collection Form -->
-                    <div class="bg-gray-50 p-4 rounded-lg">
-                        <h4 class="text-sm font-medium text-gray-700 mb-3">Record Physical Cash Count</h4>
-                        <form method="POST" class="grid grid-cols-1 md:grid-cols-4 gap-3">
-                            <div>
-                                <label class="block text-sm text-gray-600">1 Peso Coins</label>
-                                <input type="number" name="coins_1" value="<?= $coin_counts['1 Peso'] ?>" 
-                                       class="w-full border-gray-300 rounded-md p-2 text-sm">
+                    <div style="background: #f8fafc; padding: 20px; border-radius: 8px;">
+                        <h4 style="font-size: 14px; color: #374151; margin-bottom: 15px;">Record Physical Cash Count</h4>
+                        <form method="POST" style="display: grid; grid-template-columns: repeat(4, 1fr); gap: 15px;">
+                            <div class="input-group">
+                                <label style="font-size: 12px;">1 Peso Coins</label>
+                                <input type="number" name="coins_1" value="<?= $coin_counts['1 Peso'] ?>" style="padding: 8px;">
                             </div>
-                            <div>
-                                <label class="block text-sm text-gray-600">5 Peso Coins</label>
-                                <input type="number" name="coins_5" value="<?= $coin_counts['5 Peso'] ?>" 
-                                       class="w-full border-gray-300 rounded-md p-2 text-sm">
+                            <div class="input-group">
+                                <label style="font-size: 12px;">5 Peso Coins</label>
+                                <input type="number" name="coins_5" value="<?= $coin_counts['5 Peso'] ?>" style="padding: 8px;">
                             </div>
-                            <div>
-                                <label class="block text-sm text-gray-600">10 Peso Coins</label>
-                                <input type="number" name="coins_10" value="<?= $coin_counts['10 Peso'] ?>" 
-                                       class="w-full border-gray-300 rounded-md p-2 text-sm">
+                            <div class="input-group">
+                                <label style="font-size: 12px;">10 Peso Coins</label>
+                                <input type="number" name="coins_10" value="<?= $coin_counts['10 Peso'] ?>" style="padding: 8px;">
                             </div>
-                            <div class="flex items-end">
-                                <button type="submit" name="reconcile_cash" 
-                                        class="w-full bg-blue-600 text-white px-4 py-2 rounded-md hover:bg-blue-700 text-sm">
+                            <div style="display: flex; align-items: end;">
+                                <button type="submit" name="reconcile_cash" class="btn-primary" style="width: 100%;">
                                     Reconcile Cash
                                 </button>
                             </div>
                         </form>
-                        
-                        <?php if (isset($reconciliation_message)) echo $reconciliation_message; ?>
                     </div>
                 </div>
 
-                <!-- Revenue Report -->
-                <div class="mb-6">
-                    <h3 class="text-lg font-semibold mb-3 text-gray-800">Revenue Report</h3>
-                    <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
-                        <div class="bg-blue-50 p-4 rounded-lg">
-                            <h4 class="text-sm font-medium text-blue-800">Total Cash Collected</h4>
-                            <p class="text-xl font-bold text-blue-600">₱<?= number_format($total_revenue, 2) ?></p>
-                        </div>
-                        <div class="bg-green-50 p-4 rounded-lg">
-                            <h4 class="text-sm font-medium text-green-800">Expected from Water Sales</h4>
-                            <p class="text-xl font-bold text-green-600">₱<?= number_format($total_revenue, 2) ?></p>
-                        </div>
-                        <div class="bg-<?= count($discrepancies) > 0 ? 'red' : 'gray' ?>-50 p-4 rounded-lg">
-                            <h4 class="text-sm font-medium text-<?= count($discrepancies) > 0 ? 'red' : 'gray' ?>-800">Water Discrepancy</h4>
-                            <p class="text-xl font-bold text-<?= count($discrepancies) > 0 ? 'red' : 'gray' ?>-600">
-                                <?= count($discrepancies) ?> transactions
-                            </p>
-                        </div>
-                    </div>
-                </div>
-
-                <!-- Transaction Ledger -->
+                <!-- Revenue Analytics -->
                 <div>
-                    <h3 class="text-lg font-semibold mb-3 text-gray-800">Transaction Ledger</h3>
-                    <div class="table-container overflow-x-auto">
-                        <table class="w-full border-collapse text-sm">
-                            <thead>
-                                <tr class="bg-gray-200 sticky-header">
-                                    <th class="p-2 border text-left">Transaction ID</th>
-                                    <th class="p-2 border text-left">Date & Time</th>
-                                    <th class="p-2 border text-left">Coin Type</th>
-                                    <th class="p-2 border text-left">Coins Inserted</th>
-                                    <th class="p-2 border text-left">Water Dispensed (L)</th>
-                                    <th class="p-2 border text-left">Expected (L)</th>
-                                    <th class="p-2 border text-left">Deviation</th>
-                                </tr>
-                            </thead>
-                            <tbody>
-                                <?php foreach ($transactions as $transaction): 
-                                    $coin_value = $coin_values[$transaction['coin_type']] ?? 0;
-                                    $expected = $expected_amounts[$transaction['coin_type']] ?? 0;
-                                    $discrepancy = $transaction['amount_dispensed'] - $expected;
-                                ?>
-                                    <tr class="<?= abs($discrepancy) > 0.01 ? 'discrepancy' : '' ?>">
-                                        <td class="p-2 border"><?= $transaction['transaction_id'] ?></td>
-                                        <td class="p-2 border"><?= htmlspecialchars($transaction['formatted_date']) ?></td>
-                                        <td class="p-2 border"><?= htmlspecialchars($transaction['coin_type']) ?></td>
-                                        <td class="p-2 border">₱<?= number_format($coin_value, 2) ?></td>
-                                        <td class="p-2 border"><?= number_format($transaction['amount_dispensed'], 2) ?></td>
-                                        <td class="p-2 border"><?= number_format($expected, 2) ?></td>
-                                        <td class="p-2 border <?= abs($discrepancy) > 0.01 ? 'text-red-600 font-medium' : '' ?>">
-                                            <?= number_format($discrepancy, 2) ?> L
-                                        </td>
-                                    </tr>
-                                <?php endforeach; ?>
-                            </tbody>
-                        </table>
-                    </div>
+                    <h3 style="margin-bottom: 15px; color: #374151;">Revenue Analytics</h3>
+                    <canvas id="revenueChart" style="width: 100%; height: 300px;"></canvas>
                 </div>
-            </section>
+            </div>
         </div>
 
         <!-- Calibration Tab -->
         <div id="calibration" class="tab-content">
-            <section class="bg-white p-4 sm:p-6 rounded-lg shadow-md mb-6">
-                <h2 class="text-lg sm:text-xl font-semibold mb-4 text-gray-800">Machine Calibration Module</h2>
+            <div class="chart-container">
+                <h2 style="margin-bottom: 20px; color: #1e293b;">Machine Calibration Module</h2>
                 
-                <!-- Calibration Status -->
-                <div class="mb-6">
-                    <h3 class="text-lg font-semibold mb-3 text-gray-800">Calibration Status</h3>
-                    <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
-                        <div class="bg-white p-4 rounded-lg border">
-                            <h4 class="text-sm font-medium text-gray-700">Flow Meter Status</h4>
-                            <p class="text-lg font-bold <?= isset($accuracy) && $accuracy >= 90 ? 'text-green-600' : 'text-red-600' ?>">
-                                <?= isset($accuracy) && $accuracy >= 90 ? 'Calibrated' : 'Needs Calibration' ?>
-                            </p>
-                            <p class="text-sm text-gray-600 mt-1">
-                                Target: 1 Peso=0.25L, 5 Peso=0.5L, 10 Peso=1.0L
-                            </p>
-                        </div>
-                        <div class="bg-white p-4 rounded-lg border">
-                            <h4 class="text-sm font-medium text-gray-700">Coin Acceptor Status</h4>
-                            <p class="text-lg font-bold text-green-600">Operational</p>
-                            <p class="text-sm text-gray-600 mt-1">All coin types detected correctly</p>
-                        </div>
-                    </div>
-                </div>
-
-                <!-- Calibration Details -->
-                <div class="mb-6">
-                    <?= $action_plan ?>
-                    <?= $adjustment_details ?>
-                </div>
-
+                <?= $action_plan ?>
+                <?= $adjustment_details ?>
+                
                 <!-- Expected vs Actual -->
-                <div class="mb-6">
-                    <h3 class="text-lg font-semibold mb-3 text-gray-800">Expected vs Actual Dispensing</h3>
-                    <div class="bg-gray-50 p-4 rounded-lg">
-                        <div class="grid grid-cols-1 md:grid-cols-3 gap-4 text-center">
-                            <div class="bg-white p-4 rounded-lg border">
-                                <h4 class="text-sm font-medium text-gray-700">1 Peso Coin</h4>
-                                <p class="text-lg font-bold text-blue-600">Target: 0.25L (250ml)</p>
-                                <p class="text-sm text-gray-600">Check Arduino: amountDispensed = 0.25</p>
-                            </div>
-                            <div class="bg-white p-4 rounded-lg border">
-                                <h4 class="text-sm font-medium text-gray-700">5 Peso Coin</h4>
-                                <p class="text-lg font-bold text-blue-600">Target: 0.5L (500ml)</p>
-                                <p class="text-sm text-gray-600">Check Arduino: amountDispensed = 0.50</p>
-                            </div>
-                            <div class="bg-white p-4 rounded-lg border">
-                                <h4 class="text-sm font-medium text-gray-700">10 Peso Coin</h4>
-                                <p class="text-lg font-bold text-blue-600">Target: 1.0L (1000ml)</p>
-                                <p class="text-sm text-gray-600">Check Arduino: amountDispensed = 1.00</p>
-                            </div>
+                <div style="margin-top: 30px;">
+                    <h3 style="margin-bottom: 15px; color: #374151;">Expected vs Actual Dispensing</h3>
+                    <div style="display: grid; grid-template-columns: repeat(3, 1fr); gap: 15px;">
+                        <div style="background: white; padding: 15px; border-radius: 8px; border: 1px solid #e5e7eb;">
+                            <h4 style="font-size: 14px; color: #374151; margin-bottom: 10px;">1 Peso Coin</h4>
+                            <p style="font-size: 16px; font-weight: bold; color: #3b82f6;">Target: 0.25L (250ml)</p>
+                            <p style="font-size: 12px; color: #6b7280;">Check Arduino: amountDispensed = 0.25</p>
+                        </div>
+                        <div style="background: white; padding: 15px; border-radius: 8px; border: 1px solid #e5e7eb;">
+                            <h4 style="font-size: 14px; color: #374151; margin-bottom: 10px;">5 Peso Coin</h4>
+                            <p style="font-size: 16px; font-weight: bold; color: #3b82f6;">Target: 0.5L (500ml)</p>
+                            <p style="font-size: 12px; color: #6b7280;">Check Arduino: amountDispensed = 0.50</p>
+                        </div>
+                        <div style="background: white; padding: 15px; border-radius: 8px; border: 1px solid #e5e7eb;">
+                            <h4 style="font-size: 14px; color: #374151; margin-bottom: 10px;">10 Peso Coin</h4>
+                            <p style="font-size: 16px; font-weight: bold; color: #3b82f6;">Target: 1.0L (1000ml)</p>
+                            <p style="font-size: 12px; color: #6b7280;">Check Arduino: amountDispensed = 1.00</p>
                         </div>
                     </div>
                 </div>
-
-                <!-- Calibration History -->
-                <div>
-                    <h3 class="text-lg font-semibold mb-3 text-gray-800">Calibration History</h3>
-                    <div class="bg-gray-50 p-4 rounded-lg">
-                        <p class="text-gray-600">Last calibration check: <?= date('F j, Y H:i:s') ?></p>
-                        <p class="text-gray-600">System: <?= isset($accuracy) ? number_format($accuracy, 2) . '% accuracy' : 'No data' ?></p>
-                        <p class="text-gray-600">Action: <?= isset($accuracy) && $accuracy >= 90 ? 'No action needed' : 'Calibration required' ?></p>
-                    </div>
-                </div>
-            </section>
+            </div>
         </div>
 
         <!-- Analytics Tab -->
         <div id="analytics" class="tab-content">
-            <section class="bg-white p-4 sm:p-6 rounded-lg shadow-md mb-6">
-                <h2 class="text-lg sm:text-xl font-semibold mb-4 text-gray-800">Analytics & Reporting</h2>
+            <div class="chart-container">
+                <h2 style="margin-bottom: 20px; color: #1e293b;">Analytics & Reporting</h2>
                 
-                <!-- Sales Trends -->
-                <div class="mb-6">
-                    <h3 class="text-lg font-semibold mb-3 text-gray-800">Sales Trends</h3>
-                    <div class="bg-white p-4 rounded-lg border">
-                        <canvas id="salesTrendChart" class="w-full h-64"></canvas>
+                <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 20px;">
+                    <div>
+                        <h3 style="margin-bottom: 15px; color: #374151;">Coin Distribution</h3>
+                        <canvas id="coinDistributionChart" style="width: 100%; height: 300px;"></canvas>
                     </div>
-                </div>
-
-                <!-- Performance Metrics -->
-                <div class="mb-6">
-                    <h3 class="text-lg font-semibold mb-3 text-gray-800">Performance Metrics</h3>
-                    <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
-                        <div class="bg-blue-50 p-4 rounded-lg">
-                            <h4 class="text-sm font-medium text-blue-800">Average Transaction Value</h4>
-                            <p class="text-xl font-bold text-blue-600">
-                                ₱<?= !empty($transactions) ? number_format($total_revenue / count($transactions), 2) : '0.00' ?>
-                            </p>
-                        </div>
-                        <div class="bg-green-50 p-4 rounded-lg">
-                            <h4 class="text-sm font-medium text-green-800">Total Transactions</h4>
-                            <p class="text-xl font-bold text-green-600"><?= count($transactions) ?></p>
-                        </div>
-                        <div class="bg-purple-50 p-4 rounded-lg">
-                            <h4 class="text-sm font-medium text-purple-800">Peak Usage Hours</h4>
-                            <p class="text-xl font-bold text-purple-600">10:00 AM - 2:00 PM</p>
-                        </div>
-                    </div>
-                </div>
-
-                <!-- Coin Type Distribution -->
-                <div>
-                    <h3 class="text-lg font-semibold mb-3 text-gray-800">Coin Type Distribution</h3>
-                    <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
-                        <div class="bg-white p-4 rounded-lg border">
-                            <canvas id="coinDistributionChart" class="w-full h-48"></canvas>
-                        </div>
-                        <div class="bg-white p-4 rounded-lg border">
-                            <h4 class="text-sm font-medium text-gray-700 mb-2">Usage by Coin Type</h4>
-                            <ul class="space-y-2">
-                                <?php
-                                $coin_counts = ['1 Peso' => 0, '5 Peso' => 0, '10 Peso' => 0];
-                                foreach ($transactions as $transaction) {
-                                    $coin_type = $transaction['coin_type'];
-                                    if (isset($coin_counts[$coin_type])) {
-                                        $coin_counts[$coin_type]++;
-                                    }
-                                }
-                                $total = array_sum($coin_counts);
-                                ?>
-                                <?php foreach ($coin_counts as $coin => $count): ?>
-                                    <?php if ($total > 0): ?>
-                                        <li class="flex justify-between items-center">
-                                            <span class="text-gray-600"><?= $coin ?></span>
-                                            <span class="font-medium"><?= $count ?> (<?= number_format(($count / $total) * 100, 1) ?>%)</span>
-                                        </li>
-                                    <?php endif; ?>
-                                <?php endforeach; ?>
-                            </ul>
+                    <div>
+                        <h3 style="margin-bottom: 15px; color: #374151;">Performance Metrics</h3>
+                        <div style="display: grid; gap: 15px;">
+                            <div style="background: #f0f9ff; padding: 15px; border-radius: 8px;">
+                                <h4 style="font-size: 14px; color: #0369a1; margin-bottom: 5px;">Average Transaction Value</h4>
+                                <p style="font-size: 20px; font-weight: bold; color: #0369a1;">
+                                    ₱<?= !empty($transactions) ? number_format($total_revenue / count($transactions), 2) : '0.00' ?>
+                                </p>
+                            </div>
+                            <div style="background: #f0fdf4; padding: 15px; border-radius: 8px;">
+                                <h4 style="font-size: 14px; color: #166534; margin-bottom: 5px;">Total Transactions</h4>
+                                <p style="font-size: 20px; font-weight: bold; color: #166534;"><?= count($transactions) ?></p>
+                            </div>
+                            <div style="background: #faf5ff; padding: 15px; border-radius: 8px;">
+                                <h4 style="font-size: 14px; color: #7c3aed; margin-bottom: 5px;">Accuracy Rate</h4>
+                                <p style="font-size: 20px; font-weight: bold; color: #7c3aed;">
+                                    <?= isset($accuracy) ? number_format($accuracy, 1) . '%' : 'N/A' ?>
+                                </p>
+                            </div>
                         </div>
                     </div>
                 </div>
-            </section>
-        </div>
-
-        <!-- Modal and Footer (unchanged) -->
-        <div id="transactionModal" class="modal">
-            <div class="modal-content">
-                <span class="modal-close">&times;</span>
-                <h2 class="text-lg font-semibold mb-4">Transaction Details</h2>
-                <div id="modalContent" class="text-gray-700"></div>
             </div>
         </div>
-
-        <footer class="mt-6 text-center text-gray-600 text-sm">
-            <p>&copy; 2025 Water Dispenser System. All rights reserved.</p>
-        </footer>
     </div>
 </div>
 
+<!-- Transaction Details Modal -->
+<div class="modal" id="transactionModal">
+    <div class="modal-content">
+        <div class="modal-header">
+            <h2>Transaction Details</h2>
+            <span class="close-modal">×</span>
+        </div>
+        <div class="modal-body">
+            <div id="transactionDetails"></div>
+        </div>
+        <div class="modal-footer">
+            <button type="button" class="btn-secondary" onclick="closeModal('transactionModal')">Close</button>
+        </div>
+    </div>
+</div>
+
+<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
 <script>
-    // Tab Navigation
-    document.querySelectorAll('.tab-button').forEach(button => {
-        button.addEventListener('click', function() {
-            // Remove active class from all buttons and contents
-            document.querySelectorAll('.tab-button').forEach(btn => btn.classList.remove('active'));
-            document.querySelectorAll('.tab-content').forEach(content => content.classList.remove('active'));
-            
-            // Add active class to clicked button and corresponding content
-            this.classList.add('active');
-            const tabId = this.getAttribute('data-tab');
-            document.getElementById(tabId).classList.add('active');
-        });
+// Tab Navigation
+document.querySelectorAll('.tab-button').forEach(button => {
+    button.addEventListener('click', function() {
+        // Remove active class from all buttons and contents
+        document.querySelectorAll('.tab-button').forEach(btn => btn.classList.remove('active'));
+        document.querySelectorAll('.tab-content').forEach(content => content.classList.remove('active'));
+        
+        // Add active class to clicked button and corresponding content
+        this.classList.add('active');
+        const tabId = this.getAttribute('data-tab');
+        document.getElementById(tabId).classList.add('active');
     });
+});
 
-    // Search functionality
-    document.getElementById('searchInput').addEventListener('input', function(e) {
-        const searchTerm = e.target.value.toLowerCase();
-        const rows = document.querySelectorAll('#transactionTable tr');
-        rows.forEach(row => {
-            const rowText = Array.from(row.querySelectorAll('td')).map(cell => cell.textContent.toLowerCase()).join(' ');
-            row.style.display = rowText.includes(searchTerm) ? '' : 'none';
-        });
+// State management for table
+let currentPage = 1;
+let rowsPerPage = 25;
+let searchTerm = '';
+
+function filterAndPaginate() {
+    const rows = document.querySelectorAll('#transactionsTable tbody tr');
+    const filteredRows = [];
+    
+    rows.forEach(row => {
+        const text = Array.from(row.cells).map(cell => cell.textContent.toLowerCase()).join(' ');
+        if (text.includes(searchTerm.toLowerCase())) {
+            filteredRows.push(row);
+            row.style.display = '';
+        } else {
+            row.style.display = 'none';
+        }
     });
+    
+    const totalRows = filteredRows.length;
+    const totalPages = Math.ceil(totalRows / rowsPerPage);
+    currentPage = Math.min(currentPage, Math.max(1, totalPages));
+    
+    filteredRows.forEach((row, index) => {
+        const start = (currentPage - 1) * rowsPerPage;
+        const end = start + rowsPerPage;
+        row.style.display = (index >= start && index < end) ? '' : 'none';
+    });
+    
+    updatePagination(totalPages);
+}
 
-    // Modal functionality
+function updatePagination(totalPages) {
+    const pagination = document.getElementById('pagination');
+    pagination.innerHTML = '';
+    
+    const prevButton = document.createElement('button');
+    prevButton.textContent = 'Previous';
+    prevButton.disabled = currentPage === 1;
+    prevButton.addEventListener('click', () => {
+        if (currentPage > 1) {
+            currentPage--;
+            filterAndPaginate();
+        }
+    });
+    pagination.appendChild(prevButton);
+    
+    for (let i = 1; i <= totalPages; i++) {
+        const pageButton = document.createElement('button');
+        pageButton.textContent = i;
+        pageButton.className = i === currentPage ? 'active' : '';
+        pageButton.addEventListener('click', () => {
+            currentPage = i;
+            filterAndPaginate();
+        });
+        pagination.appendChild(pageButton);
+    }
+    
+    const nextButton = document.createElement('button');
+    nextButton.textContent = 'Next';
+    nextButton.disabled = currentPage === totalPages || totalPages === 0;
+    nextButton.addEventListener('click', () => {
+        if (currentPage < totalPages) {
+            currentPage++;
+            filterAndPaginate();
+        }
+    });
+    pagination.appendChild(nextButton);
+}
+
+function filterTable(filterType) {
+    const rows = document.querySelectorAll('#transactionsTable tbody tr');
+    
+    switch(filterType) {
+        case 'discrepancies':
+            rows.forEach(row => {
+                const isDiscrepancy = row.classList.contains('discrepancy');
+                row.style.display = isDiscrepancy ? '' : 'none';
+            });
+            break;
+        case 'revenue':
+            // Show all revenue-related transactions
+            rows.forEach(row => row.style.display = '');
+            break;
+        case 'water':
+            // Show all water dispensing transactions
+            rows.forEach(row => row.style.display = '');
+            break;
+        case 'cash':
+            // Show cash-related transactions
+            rows.forEach(row => row.style.display = '');
+            break;
+        default:
+            rows.forEach(row => row.style.display = '');
+    }
+    
+    document.getElementById('searchInput').value = '';
+    searchTerm = '';
+    currentPage = 1;
+    filterAndPaginate();
+}
+
+function showTransactionDetails(transactionId) {
+    // In a real implementation, you would fetch transaction details via AJAX
     const modal = document.getElementById('transactionModal');
-    const modalContent = document.getElementById('modalContent');
-    const closeModal = document.querySelector('.modal-close');
+    const details = document.getElementById('transactionDetails');
+    
+    details.innerHTML = `
+        <p><strong>Transaction ID:</strong> ${transactionId}</p>
+        <p><strong>Details would be loaded via AJAX in a real implementation</strong></p>
+        <p>This would show complete transaction information including timestamps, amounts, and any calibration issues.</p>
+    `;
+    
+    modal.style.display = 'block';
+}
 
-    document.querySelectorAll('.transaction-row').forEach(row => {
-        row.addEventListener('click', function() {
-            const data = JSON.parse(this.dataset.transaction);
-            modalContent.innerHTML = `
-                <p><strong>Transaction ID:</strong> ${data.id}</p>
-                <p><strong>Coin Type:</strong> ${data.coin_type}</p>
-                <p><strong>Amount Dispensed:</strong> ${data.amount} liters</p>
-                <p><strong>Expected:</strong> ${data.expected} liters</p>
-                <p><strong>Water Type:</strong> ${data.water_type}</p>
-                <p><strong>Date:</strong> ${data.date}</p>
-            `;
-            modal.style.display = 'block';
+function closeModal(modalId) {
+    document.getElementById(modalId).style.display = 'none';
+}
+
+// Initialize page
+document.addEventListener('DOMContentLoaded', function() {
+    filterAndPaginate();
+    
+    document.getElementById('searchInput').addEventListener('input', function() {
+        searchTerm = this.value;
+        currentPage = 1;
+        filterAndPaginate();
+    });
+    
+    document.getElementById('rowsPerPage').addEventListener('change', function() {
+        rowsPerPage = parseInt(this.value);
+        currentPage = 1;
+        filterAndPaginate();
+    });
+    
+    document.querySelectorAll('.close-modal').forEach(btn => {
+        btn.addEventListener('click', function() {
+            this.closest('.modal').style.display = 'none';
         });
     });
-
-    closeModal.addEventListener('click', function() {
-        modal.style.display = 'none';
-    });
-
+    
     window.addEventListener('click', function(event) {
-        if (event.target === modal) {
-            modal.style.display = 'none';
+        if (event.target.className === 'modal') {
+            event.target.style.display = 'none';
         }
     });
 
-    // Discrepancy card click functionality
-    document.getElementById('discrepancyCard').addEventListener('click', function() {
-        const rows = document.querySelectorAll('#transactionTable tr');
-        rows.forEach(row => {
-            const isDiscrepancy = row.classList.contains('discrepancy');
-            row.style.display = isDiscrepancy ? '' : 'none';
-        });
-        document.getElementById('searchInput').value = ''; // Clear search input
-        // Scroll to transactions section
-        document.getElementById('transactionsSection').scrollIntoView({ behavior: 'smooth' });
-    });
+    // Initialize charts
+    initCharts();
+});
 
+function initCharts() {
     // Calibration Chart
-    const ctx = document.getElementById('calibrationChart').getContext('2d');
-    new Chart(ctx, {
+    const calibrationCtx = document.getElementById('calibrationChart').getContext('2d');
+    new Chart(calibrationCtx, {
         type: 'bar',
         data: {
             labels: <?= json_encode($chart_labels) ?>,
@@ -964,35 +1383,21 @@ if ($start_date > $end_date) {
             }]
         },
         options: {
+            responsive: true,
+            maintainAspectRatio: false,
             scales: {
                 y: {
                     beginAtZero: true,
                     max: 100,
-                    title: { display: true, text: 'Accuracy (%)', font: { size: 12 } },
-                    ticks: { stepSize: 20, font: { size: 10 } }
-                },
-                x: {
-                    title: { display: true, text: 'Coin Type', font: { size: 12 } },
-                    ticks: { font: { size: 10 } }
+                    title: { display: true, text: 'Accuracy (%)' }
                 }
-            },
-            plugins: {
-                legend: { display: false },
-                tooltip: {
-                    callbacks: {
-                        label: function(context) {
-                            return `${context.raw.toFixed(2)}% accuracy`;
-                        }
-                    }
-                }
-            },
-            maintainAspectRatio: false
+            }
         }
     });
 
-    // Sales Trend Chart (Sample Data)
-    const salesCtx = document.getElementById('salesTrendChart').getContext('2d');
-    new Chart(salesCtx, {
+    // Revenue Chart
+    const revenueCtx = document.getElementById('revenueChart').getContext('2d');
+    new Chart(revenueCtx, {
         type: 'line',
         data: {
             labels: ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'],
@@ -1003,23 +1408,11 @@ if ($start_date > $end_date) {
                 backgroundColor: 'rgba(59, 130, 246, 0.1)',
                 fill: true,
                 tension: 0.4
-            }, {
-                label: 'Water Dispensed (L)',
-                data: [600, 950, 750, 1000, 900, 1100, 850],
-                borderColor: '#10b981',
-                backgroundColor: 'rgba(16, 185, 129, 0.1)',
-                fill: true,
-                tension: 0.4
             }]
         },
         options: {
             responsive: true,
-            maintainAspectRatio: false,
-            scales: {
-                y: {
-                    beginAtZero: true
-                }
-            }
+            maintainAspectRatio: false
         }
     });
 
@@ -1054,7 +1447,7 @@ if ($start_date > $end_date) {
             }
         }
     });
+}
 </script>
 
-<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
 <?php require_once 'includes/footer.php'; ?>
