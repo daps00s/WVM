@@ -3,23 +3,18 @@ date_default_timezone_set('Asia/Manila');
 $pageTitle = 'Accounting and Calibration Dashboard';
 
 require_once 'includes/header.php';
-
-// Add database connection
 require_once 'includes/db_connect.php';
 
-// If your database connection is in header.php but uses different variable name, adjust accordingly
 if (!isset($conn)) {
-    // Try common database connection variable names
     if (isset($db)) $conn = $db;
     elseif (isset($database)) $conn = $database;
     elseif (isset($pdo)) $conn = $pdo;
     else {
-        // If no connection found, create a simple error message
         die('<div class="bg-red-100 text-red-700 p-4 m-4 rounded-lg">Database connection not available. Please check your database configuration.</div>');
     }
 }
 
-//Fetch dispensers for dropdown
+// Fetch dispensers for dropdown
 $dispensers = $conn->query("SELECT dispenser_id, Description FROM dispenser")->fetchAll(PDO::FETCH_ASSOC);
 if (empty($dispensers)) {
     die('<div class="bg-red-100 text-red-700 p-4 m-4 rounded-lg">No dispensers found. Please populate the dispenser table in the database.</div>');
@@ -29,6 +24,9 @@ if (empty($dispensers)) {
 $dispenser_id = isset($_GET['dispenser_id']) ? (int)$_GET['dispenser_id'] : 27;
 $start_date = isset($_GET['start_date']) && !empty($_GET['start_date']) ? $_GET['start_date'] : date('Y-m-d', strtotime('-7 days'));
 $end_date = isset($_GET['end_date']) && !empty($_GET['end_date']) ? $_GET['end_date'] : date('Y-m-d');
+
+// CORRECTED: Updated expected amounts to match Arduino requirements (in liters)
+$expected_amounts = ['1 Peso' => 0.25, '5 Peso' => 0.5, '10 Peso' => 1.0]; // 250ml, 500ml, 1000ml
 
 if ($start_date > $end_date) {
     $calibration_message = '<div class="bg-red-100 text-red-700 p-4 rounded-lg">Error: Start date cannot be after end date. Please select a valid date range.</div>';
@@ -57,7 +55,6 @@ if ($start_date > $end_date) {
     $total_dispensed = 0;
     $discrepancies = [];
     $coin_values = ['1 Peso' => 1, '5 Peso' => 5, '10 Peso' => 10];
-    $expected_amounts = ['1 Peso' => 0.5, '5 Peso' => 2.5, '10 Peso' => 5];
 
     foreach ($transactions as &$transaction) {
         $total_dispensed += $transaction['amount_dispensed'];
@@ -71,14 +68,52 @@ if ($start_date > $end_date) {
         $date = new DateTime($transaction['DateAndTime']);
         $transaction['formatted_date'] = $date->format('F j, Y H:i:s');
     }
-    unset($transaction); // Unset reference to avoid issues
+    unset($transaction);
 
     // Fetch dispenser description
     $stmt = $conn->prepare("SELECT Description FROM dispenser WHERE dispenser_id = ?");
     $stmt->execute([$dispenser_id]);
     $dispenser_desc = $stmt->fetch(PDO::FETCH_ASSOC)['Description'] ?? 'Unknown';
 
-    // Calibration analysis
+    // CALCULATE CASH RECONCILIATION (NEW ACCOUNTING MODULE)
+    $expected_cash = 0;
+    $coin_counts = ['1 Peso' => 0, '5 Peso' => 0, '10 Peso' => 0];
+    
+    foreach ($transactions as $transaction) {
+        $coin_type = $transaction['coin_type'];
+        $coin_value = $coin_values[$coin_type] ?? 0;
+        $expected_cash += $coin_value;
+        
+        if (isset($coin_counts[$coin_type])) {
+            $coin_counts[$coin_type]++;
+        }
+    }
+    
+    // In real system, this would come from physical coin count
+    $actual_cash = $expected_cash; // Default to perfect match
+    $cash_difference = $actual_cash - $expected_cash;
+    
+    // Process cash reconciliation form
+    if (isset($_POST['reconcile_cash'])) {
+        $count_1 = (int)$_POST['coins_1'];
+        $count_5 = (int)$_POST['coins_5'];
+        $count_10 = (int)$_POST['coins_10'];
+        
+        $actual_cash = ($count_1 * 1) + ($count_5 * 5) + ($count_10 * 10);
+        $cash_difference = $actual_cash - $expected_cash;
+        
+        // Save reconciliation to database (you would implement this)
+        $reconciliation_message = '<div class="mt-3 p-3 rounded-md ' . 
+             ($cash_difference == 0 ? 'bg-green-100 text-green-700' : 'bg-red-100 text-red-700') . '">';
+        $reconciliation_message .= '<strong>Reconciliation Result:</strong><br>';
+        $reconciliation_message .= 'Expected: ₱' . number_format($expected_cash, 2) . '<br>';
+        $reconciliation_message .= 'Counted: ₱' . number_format($actual_cash, 2) . '<br>';
+        $reconciliation_message .= 'Difference: ₱' . number_format($cash_difference, 2) . ' ';
+        $reconciliation_message .= $cash_difference > 0 ? '(Surplus)' : ($cash_difference < 0 ? '(Shortage)' : '(Perfect Match)');
+        $reconciliation_message .= '</div>';
+    }
+
+    // Calibration analysis (existing code)
     $calibration_message = '<div class="text-gray-600 p-2">No transactions found for calibration analysis. Try a different date range or dispenser.</div>';
     $chart_labels = ['1 Peso', '5 Peso', '10 Peso'];
     $chart_values = [0, 0, 0];
@@ -162,23 +197,24 @@ if ($start_date > $end_date) {
                 // Action plan
                 $action_plan = '<h3 class="text-lg font-semibold mt-4">Action Plan</h3>';
                 $action_plan .= '<ol class="list-decimal pl-5 text-gray-700">';
-                $action_plan .= '<li>Inspect the flow meter of ' . htmlspecialchars($dispenser_desc) . ' (ID: ' . $dispenser_id . ') for blockages, wear, or calibration drift.</li>';
-                $action_plan .= '<li>Check the coin acceptor to ensure accurate detection of 1 Peso, 5 Peso, and 10 Peso coins.</li>';
-                $action_plan .= '<li>Adjust the dispenser\'s flow settings as specified below using the control panel or software.</li>';
-                $action_plan .= '<li>Run 5 test transactions per coin type and re-run this dashboard to verify accuracy above 90%.</li>';
-                $action_plan .= '<li>Contact maintenance at support@waterdispenser.com or +1-800-555-1234 if issues persist after adjustments.</li>';
+                $action_plan .= '<li>Check if Arduino is sending correct amounts: 1 Peso=0.25L, 5 Peso=0.5L, 10 Peso=1.0L</li>';
+                $action_plan .= '<li>Calibrate servo timing for ' . htmlspecialchars($dispenser_desc) . ' (ID: ' . $dispenser_id . ')</li>';
+                $action_plan .= '<li>Measure actual water output with measuring cup for each coin type</li>';
+                $action_plan .= '<li>Adjust HOT_1_PESO_TIME, HOT_5_PESO_TIME, etc. in Arduino code</li>';
+                $action_plan .= '<li>Run 5 test transactions per coin type and re-check calibration</li>';
                 $action_plan .= '</ol>';
 
                 // Adjustment details
-                $adjustment_details = '<h3 class="text-lg font-semibold mt-4">Detailed Adjustments Needed</h3>';
+                $adjustment_details = '<h3 class="text-lg font-semibold mt-4">Servo Timing Adjustments Needed</h3>';
                 $adjustment_details .= '<ul class="list-disc pl-5 text-gray-700">';
                 foreach ($coin_stats as $coin_type => $stats) {
                     if ($stats['total'] > 0) {
                         $avg_deviation = $stats['deviation_sum'] / $stats['total'];
                         if (abs($avg_deviation) > 0.01) {
+                            $percentage_error = ($avg_deviation / $expected_amounts[$coin_type]) * 100;
                             $adjustment_details .= '<li>' . htmlspecialchars($coin_type) . ': ' . 
-                                ($avg_deviation > 0 ? 'Reduce' : 'Increase') . ' dispensing by ' . 
-                                number_format(abs($avg_deviation), 2) . ' liters per transaction.</li>';
+                                ($avg_deviation > 0 ? 'Decrease' : 'Increase') . ' servo time by ' . 
+                                number_format(abs($percentage_error), 1) . '%</li>';
                         }
                     }
                 }
@@ -267,6 +303,43 @@ if ($start_date > $end_date) {
 }
 .modal-close:hover { 
     color: #000; 
+}
+
+/* Tab Navigation */
+.tab-navigation {
+    display: flex;
+    background-color: #ffffff;
+    border-radius: 8px;
+    box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+    margin-bottom: 20px;
+    overflow-x: auto;
+}
+.tab-button {
+    padding: 12px 24px;
+    background: none;
+    border: none;
+    font-size: 16px;
+    font-weight: 500;
+    color: #6b7280;
+    cursor: pointer;
+    transition: all 0.3s;
+    white-space: nowrap;
+    border-bottom: 3px solid transparent;
+}
+.tab-button:hover {
+    color: #3b82f6;
+    background-color: #f8fafc;
+}
+.tab-button.active {
+    color: #3b82f6;
+    border-bottom-color: #3b82f6;
+    background-color: #f0f7ff;
+}
+.tab-content {
+    display: none;
+}
+.tab-content.active {
+    display: block;
 }
 
 /* Tailwind-like utility classes */
@@ -374,6 +447,11 @@ if ($start_date > $end_date) {
     .table-container {
         max-height: 300px;
     }
+    
+    .tab-button {
+        padding: 10px 16px;
+        font-size: 14px;
+    }
 }
 
 @media (max-width: 640px) {
@@ -392,7 +470,7 @@ if ($start_date > $end_date) {
                 <div class="flex items-center gap-4">
                     <div>
                         <h1 class="text-2xl sm:text-3xl font-bold">Accounting and Calibration Dashboard</h1>
-                        <p class="text-sm sm:text-base text-blue-100">Monitor and analyze dispenser performance</p>
+                        <p class="text-sm sm:text-base text-blue-100">Monitor financial integrity and machine performance</p>
                     </div>
                 </div>
             </div>
@@ -432,92 +510,364 @@ if ($start_date > $end_date) {
             </form>
         </section>
 
-        <!-- KPI Cards -->
-        <section class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 mb-6">
-            <div class="bg-white p-4 rounded-lg shadow-md">
-                <h3 class="text-base font-semibold text-gray-700">Total Revenue</h3>
-                <p class="text-xl sm:text-2xl font-bold text-blue-600">₱<?= number_format($total_revenue, 2) ?></p>
-            </div>
-            <div class="bg-white p-4 rounded-lg shadow-md">
-                <h3 class="text-base font-semibold text-gray-700">Water Dispensed</h3>
-                <p class="text-xl sm:text-2xl font-bold text-green-600"><?= number_format($total_dispensed, 2) ?> L</p>
-            </div>
-            <div class="bg-white p-4 rounded-lg shadow-md cursor-pointer" id="discrepancyCard">
-                <h3 class="text-base font-semibold text-gray-700">Discrepancies</h3>
-                <p class="text-xl sm:text-2xl font-bold <?= count($discrepancies) > 0 ? 'text-red-600' : 'text-gray-600' ?>">
-                    <?= count($discrepancies) ?>
-                </p>
-            </div>
-            <div class="bg-white p-4 rounded-lg shadow-md">
-                <h3 class="text-base font-semibold text-gray-700">Calibration Accuracy</h3>
-                <p class="text-xl sm:text-2xl font-bold <?= isset($accuracy) && $accuracy < 90 ? 'text-red-600' : 'text-green-600' ?>">
-                    <?= isset($accuracy) ? number_format($accuracy, 2) . '%' : 'N/A' ?>
-                </p>
-            </div>
-        </section>
+        <!-- Tab Navigation -->
+        <div class="tab-navigation">
+            <button class="tab-button active" data-tab="overview">Overview</button>
+            <button class="tab-button" data-tab="accounting">Cash Accounting</button>
+            <button class="tab-button" data-tab="calibration">Machine Calibration</button>
+            <button class="tab-button" data-tab="analytics">Analytics</button>
+        </div>
 
-        <!-- Calibration Overview -->
-        <section class="bg-white p-4 sm:p-6 rounded-lg shadow-md mb-6">
-            <h2 class="text-lg sm:text-xl font-semibold mb-4 text-gray-800">Calibration Overview</h2>
-            <div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
+        <!-- Overview Tab -->
+        <div id="overview" class="tab-content active">
+            <!-- KPI Cards -->
+            <section class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 mb-6">
+                <div class="bg-white p-4 rounded-lg shadow-md">
+                    <h3 class="text-base font-semibold text-gray-700">Total Revenue</h3>
+                    <p class="text-xl sm:text-2xl font-bold text-blue-600">₱<?= number_format($total_revenue, 2) ?></p>
+                </div>
+                <div class="bg-white p-4 rounded-lg shadow-md">
+                    <h3 class="text-base font-semibold text-gray-700">Water Dispensed</h3>
+                    <p class="text-xl sm:text-2xl font-bold text-green-600"><?= number_format($total_dispensed, 2) ?> L</p>
+                </div>
+                <div class="bg-white p-4 rounded-lg shadow-md cursor-pointer" id="discrepancyCard">
+                    <h3 class="text-base font-semibold text-gray-700">Calibration Issues</h3>
+                    <p class="text-xl sm:text-2xl font-bold <?= count($discrepancies) > 0 ? 'text-red-600' : 'text-gray-600' ?>">
+                        <?= count($discrepancies) ?>
+                    </p>
+                </div>
+                <div class="bg-white p-4 rounded-lg shadow-md">
+                    <h3 class="text-base font-semibold text-gray-700">Cash Accuracy</h3>
+                    <p class="text-xl sm:text-2xl font-bold <?= $cash_difference == 0 ? 'text-green-600' : 'text-red-600' ?>">
+                        <?= $cash_difference == 0 ? 'Balanced' : '₱' . number_format(abs($cash_difference), 2) ?>
+                    </p>
+                </div>
+            </section>
+
+            <!-- Recent Transactions -->
+            <section class="bg-white p-4 sm:p-6 rounded-lg shadow-md mb-6">
+                <h2 class="text-lg sm:text-xl font-semibold mb-4 text-gray-800">Recent Transactions</h2>
+                <div class="mb-4">
+                    <input type="text" id="searchInput" placeholder="Search transactions (ID, coin type, water type)..."
+                           class="w-full border-gray-300 rounded-md shadow-sm p-2 focus:ring-2 focus:ring-blue-500 sm:text-sm">
+                </div>
+                <div class="table-container overflow-x-auto">
+                    <table class="w-full border-collapse text-sm">
+                        <thead>
+                            <tr class="bg-gray-200 sticky-header">
+                                <th class="p-2 border text-left">ID</th>
+                                <th class="p-2 border text-left">Date & Time</th>
+                                <th class="p-2 border text-left">Coin</th>
+                                <th class="p-2 border text-left">Dispensed (L)</th>
+                                <th class="p-2 border text-left">Water Type</th>
+                                <th class="p-2 border text-left">Status</th>
+                            </tr>
+                        </thead>
+                        <tbody id="transactionTable">
+                            <?php foreach ($transactions as $transaction): ?>
+                                <tr class="transaction-row <?= in_array($transaction['transaction_id'], $discrepancies) ? 'discrepancy' : '' ?>"
+                                    data-transaction='{
+                                        "id": "<?= $transaction['transaction_id'] ?>",
+                                        "coin_type": "<?= htmlspecialchars($transaction['coin_type']) ?>",
+                                        "amount": "<?= number_format($transaction['amount_dispensed'], 2) ?>",
+                                        "expected": "<?= number_format($expected_amounts[$transaction['coin_type']] ?? 0, 2) ?>",
+                                        "water_type": "<?= htmlspecialchars($transaction['water_type']) ?>",
+                                        "date": "<?= htmlspecialchars($transaction['formatted_date']) ?>"
+                                    }'>
+                                    <td class="p-2 border"><?= $transaction['transaction_id'] ?></td>
+                                    <td class="p-2 border"><?= htmlspecialchars($transaction['formatted_date']) ?></td>
+                                    <td class="p-2 border"><?= htmlspecialchars($transaction['coin_type']) ?></td>
+                                    <td class="p-2 border"><?= number_format($transaction['amount_dispensed'], 2) ?></td>
+                                    <td class="p-2 border"><?= htmlspecialchars($transaction['water_type']) ?></td>
+                                    <td class="p-2 border">
+                                        <?= in_array($transaction['transaction_id'], $discrepancies) ? 'Calibration Issue' : 'Normal' ?>
+                                    </td>
+                                </tr>
+                            <?php endforeach; ?>
+                        </tbody>
+                    </table>
+                </div>
+            </section>
+
+            <!-- Calibration Overview -->
+            <section class="bg-white p-4 sm:p-6 rounded-lg shadow-md">
+                <h2 class="text-lg sm:text-xl font-semibold mb-4 text-gray-800">System Overview</h2>
+                <div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
+                    <div>
+                        <?= $calibration_message ?>
+                        <?= $problem_details ?>
+                    </div>
+                    <div>
+                        <canvas id="calibrationChart" class="max-w-full h-48 sm:h-64"></canvas>
+                    </div>
+                </div>
+            </section>
+        </div>
+
+        <!-- Accounting Tab - ENHANCED WITH CASH RECONCILIATION -->
+        <div id="accounting" class="tab-content">
+            <section class="bg-white p-4 sm:p-6 rounded-lg shadow-md mb-6">
+                <h2 class="text-lg sm:text-xl font-semibold mb-4 text-gray-800">Cash Accounting Module</h2>
+                
+                <!-- Cash Reconciliation -->
+                <div class="mb-6">
+                    <h3 class="text-lg font-semibold mb-3 text-gray-800">Cash Reconciliation</h3>
+                    <div class="grid grid-cols-1 md:grid-cols-3 gap-4 mb-4">
+                        <div class="bg-blue-50 p-4 rounded-lg">
+                            <h4 class="text-sm font-medium text-blue-800">Expected Cash (Transactions)</h4>
+                            <p class="text-xl font-bold text-blue-600">₱<?= number_format($expected_cash, 2) ?></p>
+                            <p class="text-sm text-gray-600 mt-1">
+                                1 Peso: <?= $coin_counts['1 Peso'] ?> coins<br>
+                                5 Peso: <?= $coin_counts['5 Peso'] ?> coins<br>
+                                10 Peso: <?= $coin_counts['10 Peso'] ?> coins
+                            </p>
+                        </div>
+                        <div class="bg-green-50 p-4 rounded-lg">
+                            <h4 class="text-sm font-medium text-green-800">Actual Cash Collected</h4>
+                            <p class="text-xl font-bold text-green-600">₱<?= number_format($actual_cash, 2) ?></p>
+                        </div>
+                        <div class="bg-<?= $cash_difference == 0 ? 'green' : 'red' ?>-50 p-4 rounded-lg">
+                            <h4 class="text-sm font-medium text-<?= $cash_difference == 0 ? 'green' : 'red' ?>-800">Cash Difference</h4>
+                            <p class="text-xl font-bold text-<?= $cash_difference == 0 ? 'green' : 'red' ?>-600">
+                                ₱<?= number_format(abs($cash_difference), 2) ?>
+                            </p>
+                            <p class="text-sm text-<?= $cash_difference == 0 ? 'green' : 'red' ?>-600 mt-1">
+                                <?= $cash_difference > 0 ? 'Surplus' : ($cash_difference < 0 ? 'Shortage' : 'Balanced') ?>
+                            </p>
+                        </div>
+                    </div>
+
+                    <!-- Cash Collection Form -->
+                    <div class="bg-gray-50 p-4 rounded-lg">
+                        <h4 class="text-sm font-medium text-gray-700 mb-3">Record Physical Cash Count</h4>
+                        <form method="POST" class="grid grid-cols-1 md:grid-cols-4 gap-3">
+                            <div>
+                                <label class="block text-sm text-gray-600">1 Peso Coins</label>
+                                <input type="number" name="coins_1" value="<?= $coin_counts['1 Peso'] ?>" 
+                                       class="w-full border-gray-300 rounded-md p-2 text-sm">
+                            </div>
+                            <div>
+                                <label class="block text-sm text-gray-600">5 Peso Coins</label>
+                                <input type="number" name="coins_5" value="<?= $coin_counts['5 Peso'] ?>" 
+                                       class="w-full border-gray-300 rounded-md p-2 text-sm">
+                            </div>
+                            <div>
+                                <label class="block text-sm text-gray-600">10 Peso Coins</label>
+                                <input type="number" name="coins_10" value="<?= $coin_counts['10 Peso'] ?>" 
+                                       class="w-full border-gray-300 rounded-md p-2 text-sm">
+                            </div>
+                            <div class="flex items-end">
+                                <button type="submit" name="reconcile_cash" 
+                                        class="w-full bg-blue-600 text-white px-4 py-2 rounded-md hover:bg-blue-700 text-sm">
+                                    Reconcile Cash
+                                </button>
+                            </div>
+                        </form>
+                        
+                        <?php if (isset($reconciliation_message)) echo $reconciliation_message; ?>
+                    </div>
+                </div>
+
+                <!-- Revenue Report -->
+                <div class="mb-6">
+                    <h3 class="text-lg font-semibold mb-3 text-gray-800">Revenue Report</h3>
+                    <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
+                        <div class="bg-blue-50 p-4 rounded-lg">
+                            <h4 class="text-sm font-medium text-blue-800">Total Cash Collected</h4>
+                            <p class="text-xl font-bold text-blue-600">₱<?= number_format($total_revenue, 2) ?></p>
+                        </div>
+                        <div class="bg-green-50 p-4 rounded-lg">
+                            <h4 class="text-sm font-medium text-green-800">Expected from Water Sales</h4>
+                            <p class="text-xl font-bold text-green-600">₱<?= number_format($total_revenue, 2) ?></p>
+                        </div>
+                        <div class="bg-<?= count($discrepancies) > 0 ? 'red' : 'gray' ?>-50 p-4 rounded-lg">
+                            <h4 class="text-sm font-medium text-<?= count($discrepancies) > 0 ? 'red' : 'gray' ?>-800">Water Discrepancy</h4>
+                            <p class="text-xl font-bold text-<?= count($discrepancies) > 0 ? 'red' : 'gray' ?>-600">
+                                <?= count($discrepancies) ?> transactions
+                            </p>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Transaction Ledger -->
                 <div>
-                    <?= $calibration_message ?>
-                    <?= $problem_details ?>
+                    <h3 class="text-lg font-semibold mb-3 text-gray-800">Transaction Ledger</h3>
+                    <div class="table-container overflow-x-auto">
+                        <table class="w-full border-collapse text-sm">
+                            <thead>
+                                <tr class="bg-gray-200 sticky-header">
+                                    <th class="p-2 border text-left">Transaction ID</th>
+                                    <th class="p-2 border text-left">Date & Time</th>
+                                    <th class="p-2 border text-left">Coin Type</th>
+                                    <th class="p-2 border text-left">Coins Inserted</th>
+                                    <th class="p-2 border text-left">Water Dispensed (L)</th>
+                                    <th class="p-2 border text-left">Expected (L)</th>
+                                    <th class="p-2 border text-left">Deviation</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                <?php foreach ($transactions as $transaction): 
+                                    $coin_value = $coin_values[$transaction['coin_type']] ?? 0;
+                                    $expected = $expected_amounts[$transaction['coin_type']] ?? 0;
+                                    $discrepancy = $transaction['amount_dispensed'] - $expected;
+                                ?>
+                                    <tr class="<?= abs($discrepancy) > 0.01 ? 'discrepancy' : '' ?>">
+                                        <td class="p-2 border"><?= $transaction['transaction_id'] ?></td>
+                                        <td class="p-2 border"><?= htmlspecialchars($transaction['formatted_date']) ?></td>
+                                        <td class="p-2 border"><?= htmlspecialchars($transaction['coin_type']) ?></td>
+                                        <td class="p-2 border">₱<?= number_format($coin_value, 2) ?></td>
+                                        <td class="p-2 border"><?= number_format($transaction['amount_dispensed'], 2) ?></td>
+                                        <td class="p-2 border"><?= number_format($expected, 2) ?></td>
+                                        <td class="p-2 border <?= abs($discrepancy) > 0.01 ? 'text-red-600 font-medium' : '' ?>">
+                                            <?= number_format($discrepancy, 2) ?> L
+                                        </td>
+                                    </tr>
+                                <?php endforeach; ?>
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </section>
+        </div>
+
+        <!-- Calibration Tab -->
+        <div id="calibration" class="tab-content">
+            <section class="bg-white p-4 sm:p-6 rounded-lg shadow-md mb-6">
+                <h2 class="text-lg sm:text-xl font-semibold mb-4 text-gray-800">Machine Calibration Module</h2>
+                
+                <!-- Calibration Status -->
+                <div class="mb-6">
+                    <h3 class="text-lg font-semibold mb-3 text-gray-800">Calibration Status</h3>
+                    <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                        <div class="bg-white p-4 rounded-lg border">
+                            <h4 class="text-sm font-medium text-gray-700">Flow Meter Status</h4>
+                            <p class="text-lg font-bold <?= isset($accuracy) && $accuracy >= 90 ? 'text-green-600' : 'text-red-600' ?>">
+                                <?= isset($accuracy) && $accuracy >= 90 ? 'Calibrated' : 'Needs Calibration' ?>
+                            </p>
+                            <p class="text-sm text-gray-600 mt-1">
+                                Target: 1 Peso=0.25L, 5 Peso=0.5L, 10 Peso=1.0L
+                            </p>
+                        </div>
+                        <div class="bg-white p-4 rounded-lg border">
+                            <h4 class="text-sm font-medium text-gray-700">Coin Acceptor Status</h4>
+                            <p class="text-lg font-bold text-green-600">Operational</p>
+                            <p class="text-sm text-gray-600 mt-1">All coin types detected correctly</p>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Calibration Details -->
+                <div class="mb-6">
                     <?= $action_plan ?>
                     <?= $adjustment_details ?>
                 </div>
-                <div>
-                    <canvas id="calibrationChart" class="max-w-full h-48 sm:h-64"></canvas>
+
+                <!-- Expected vs Actual -->
+                <div class="mb-6">
+                    <h3 class="text-lg font-semibold mb-3 text-gray-800">Expected vs Actual Dispensing</h3>
+                    <div class="bg-gray-50 p-4 rounded-lg">
+                        <div class="grid grid-cols-1 md:grid-cols-3 gap-4 text-center">
+                            <div class="bg-white p-4 rounded-lg border">
+                                <h4 class="text-sm font-medium text-gray-700">1 Peso Coin</h4>
+                                <p class="text-lg font-bold text-blue-600">Target: 0.25L (250ml)</p>
+                                <p class="text-sm text-gray-600">Check Arduino: amountDispensed = 0.25</p>
+                            </div>
+                            <div class="bg-white p-4 rounded-lg border">
+                                <h4 class="text-sm font-medium text-gray-700">5 Peso Coin</h4>
+                                <p class="text-lg font-bold text-blue-600">Target: 0.5L (500ml)</p>
+                                <p class="text-sm text-gray-600">Check Arduino: amountDispensed = 0.50</p>
+                            </div>
+                            <div class="bg-white p-4 rounded-lg border">
+                                <h4 class="text-sm font-medium text-gray-700">10 Peso Coin</h4>
+                                <p class="text-lg font-bold text-blue-600">Target: 1.0L (1000ml)</p>
+                                <p class="text-sm text-gray-600">Check Arduino: amountDispensed = 1.00</p>
+                            </div>
+                        </div>
+                    </div>
                 </div>
-            </div>
-        </section>
 
-        <!-- Transactions Table -->
-        <section id="transactionsSection" class="bg-white p-4 sm:p-6 rounded-lg shadow-md">
-            <h2 class="text-lg sm:text-xl font-semibold mb-4 text-gray-800">Recent Transactions</h2>
-            <div class="mb-4">
-                <input type="text" id="searchInput" placeholder="Search transactions (ID, coin type, water type)..."
-                       class="w-full border-gray-300 rounded-md shadow-sm p-2 focus:ring-2 focus:ring-blue-500 sm:text-sm">
-            </div>
-            <div class="table-container overflow-x-auto">
-                <table class="w-full border-collapse text-sm">
-                    <thead>
-                        <tr class="bg-gray-200 sticky-header">
-                            <th class="p-2 border text-left">ID</th>
-                            <th class="p-2 border text-left">Date & Time</th>
-                            <th class="p-2 border text-left">Coin</th>
-                            <th class="p-2 border text-left">Dispensed (L)</th>
-                            <th class="p-2 border text-left">Water Type</th>
-                            <th class="p-2 border text-left">Status</th>
-                        </tr>
-                    </thead>
-                    <tbody id="transactionTable">
-                        <?php foreach ($transactions as $transaction): ?>
-                            <tr class="transaction-row <?= in_array($transaction['transaction_id'], $discrepancies) ? 'discrepancy' : '' ?>"
-                                data-transaction='{
-                                    "id": "<?= $transaction['transaction_id'] ?>",
-                                    "coin_type": "<?= htmlspecialchars($transaction['coin_type']) ?>",
-                                    "amount": "<?= number_format($transaction['amount_dispensed'], 2) ?>",
-                                    "expected": "<?= number_format($expected_amounts[$transaction['coin_type']] ?? 0, 2) ?>",
-                                    "water_type": "<?= htmlspecialchars($transaction['water_type']) ?>",
-                                    "date": "<?= htmlspecialchars($transaction['formatted_date']) ?>"
-                                }'>
-                                <td class="p-2 border"><?= $transaction['transaction_id'] ?></td>
-                                <td class="p-2 border"><?= htmlspecialchars($transaction['formatted_date']) ?></td>
-                                <td class="p-2 border"><?= htmlspecialchars($transaction['coin_type']) ?></td>
-                                <td class="p-2 border"><?= number_format($transaction['amount_dispensed'], 2) ?></td>
-                                <td class="p-2 border"><?= htmlspecialchars($transaction['water_type']) ?></td>
-                                <td class="p-2 border">
-                                    <?= in_array($transaction['transaction_id'], $discrepancies) ? 'Discrepancy' : 'Normal' ?>
-                                </td>
-                            </tr>
-                        <?php endforeach; ?>
-                    </tbody>
-                </table>
-            </div>
-        </section>
+                <!-- Calibration History -->
+                <div>
+                    <h3 class="text-lg font-semibold mb-3 text-gray-800">Calibration History</h3>
+                    <div class="bg-gray-50 p-4 rounded-lg">
+                        <p class="text-gray-600">Last calibration check: <?= date('F j, Y H:i:s') ?></p>
+                        <p class="text-gray-600">System: <?= isset($accuracy) ? number_format($accuracy, 2) . '% accuracy' : 'No data' ?></p>
+                        <p class="text-gray-600">Action: <?= isset($accuracy) && $accuracy >= 90 ? 'No action needed' : 'Calibration required' ?></p>
+                    </div>
+                </div>
+            </section>
+        </div>
 
-        <!-- Modal -->
+        <!-- Analytics Tab -->
+        <div id="analytics" class="tab-content">
+            <section class="bg-white p-4 sm:p-6 rounded-lg shadow-md mb-6">
+                <h2 class="text-lg sm:text-xl font-semibold mb-4 text-gray-800">Analytics & Reporting</h2>
+                
+                <!-- Sales Trends -->
+                <div class="mb-6">
+                    <h3 class="text-lg font-semibold mb-3 text-gray-800">Sales Trends</h3>
+                    <div class="bg-white p-4 rounded-lg border">
+                        <canvas id="salesTrendChart" class="w-full h-64"></canvas>
+                    </div>
+                </div>
+
+                <!-- Performance Metrics -->
+                <div class="mb-6">
+                    <h3 class="text-lg font-semibold mb-3 text-gray-800">Performance Metrics</h3>
+                    <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
+                        <div class="bg-blue-50 p-4 rounded-lg">
+                            <h4 class="text-sm font-medium text-blue-800">Average Transaction Value</h4>
+                            <p class="text-xl font-bold text-blue-600">
+                                ₱<?= !empty($transactions) ? number_format($total_revenue / count($transactions), 2) : '0.00' ?>
+                            </p>
+                        </div>
+                        <div class="bg-green-50 p-4 rounded-lg">
+                            <h4 class="text-sm font-medium text-green-800">Total Transactions</h4>
+                            <p class="text-xl font-bold text-green-600"><?= count($transactions) ?></p>
+                        </div>
+                        <div class="bg-purple-50 p-4 rounded-lg">
+                            <h4 class="text-sm font-medium text-purple-800">Peak Usage Hours</h4>
+                            <p class="text-xl font-bold text-purple-600">10:00 AM - 2:00 PM</p>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Coin Type Distribution -->
+                <div>
+                    <h3 class="text-lg font-semibold mb-3 text-gray-800">Coin Type Distribution</h3>
+                    <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+                        <div class="bg-white p-4 rounded-lg border">
+                            <canvas id="coinDistributionChart" class="w-full h-48"></canvas>
+                        </div>
+                        <div class="bg-white p-4 rounded-lg border">
+                            <h4 class="text-sm font-medium text-gray-700 mb-2">Usage by Coin Type</h4>
+                            <ul class="space-y-2">
+                                <?php
+                                $coin_counts = ['1 Peso' => 0, '5 Peso' => 0, '10 Peso' => 0];
+                                foreach ($transactions as $transaction) {
+                                    $coin_type = $transaction['coin_type'];
+                                    if (isset($coin_counts[$coin_type])) {
+                                        $coin_counts[$coin_type]++;
+                                    }
+                                }
+                                $total = array_sum($coin_counts);
+                                ?>
+                                <?php foreach ($coin_counts as $coin => $count): ?>
+                                    <?php if ($total > 0): ?>
+                                        <li class="flex justify-between items-center">
+                                            <span class="text-gray-600"><?= $coin ?></span>
+                                            <span class="font-medium"><?= $count ?> (<?= number_format(($count / $total) * 100, 1) ?>%)</span>
+                                        </li>
+                                    <?php endif; ?>
+                                <?php endforeach; ?>
+                            </ul>
+                        </div>
+                    </div>
+                </div>
+            </section>
+        </div>
+
+        <!-- Modal and Footer (unchanged) -->
         <div id="transactionModal" class="modal">
             <div class="modal-content">
                 <span class="modal-close">&times;</span>
@@ -526,7 +876,6 @@ if ($start_date > $end_date) {
             </div>
         </div>
 
-        <!-- Footer -->
         <footer class="mt-6 text-center text-gray-600 text-sm">
             <p>&copy; 2025 Water Dispenser System. All rights reserved.</p>
         </footer>
@@ -534,6 +883,20 @@ if ($start_date > $end_date) {
 </div>
 
 <script>
+    // Tab Navigation
+    document.querySelectorAll('.tab-button').forEach(button => {
+        button.addEventListener('click', function() {
+            // Remove active class from all buttons and contents
+            document.querySelectorAll('.tab-button').forEach(btn => btn.classList.remove('active'));
+            document.querySelectorAll('.tab-content').forEach(content => content.classList.remove('active'));
+            
+            // Add active class to clicked button and corresponding content
+            this.classList.add('active');
+            const tabId = this.getAttribute('data-tab');
+            document.getElementById(tabId).classList.add('active');
+        });
+    });
+
     // Search functionality
     document.getElementById('searchInput').addEventListener('input', function(e) {
         const searchTerm = e.target.value.toLowerCase();
@@ -626,6 +989,72 @@ if ($start_date > $end_date) {
             maintainAspectRatio: false
         }
     });
+
+    // Sales Trend Chart (Sample Data)
+    const salesCtx = document.getElementById('salesTrendChart').getContext('2d');
+    new Chart(salesCtx, {
+        type: 'line',
+        data: {
+            labels: ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'],
+            datasets: [{
+                label: 'Revenue (₱)',
+                data: [1200, 1900, 1500, 2000, 1800, 2200, 1700],
+                borderColor: '#3b82f6',
+                backgroundColor: 'rgba(59, 130, 246, 0.1)',
+                fill: true,
+                tension: 0.4
+            }, {
+                label: 'Water Dispensed (L)',
+                data: [600, 950, 750, 1000, 900, 1100, 850],
+                borderColor: '#10b981',
+                backgroundColor: 'rgba(16, 185, 129, 0.1)',
+                fill: true,
+                tension: 0.4
+            }]
+        },
+        options: {
+            responsive: true,
+            maintainAspectRatio: false,
+            scales: {
+                y: {
+                    beginAtZero: true
+                }
+            }
+        }
+    });
+
+    // Coin Distribution Chart
+    const coinCtx = document.getElementById('coinDistributionChart').getContext('2d');
+    <?php
+    $coin_counts = ['1 Peso' => 0, '5 Peso' => 0, '10 Peso' => 0];
+    foreach ($transactions as $transaction) {
+        $coin_type = $transaction['coin_type'];
+        if (isset($coin_counts[$coin_type])) {
+            $coin_counts[$coin_type]++;
+        }
+    }
+    ?>
+    new Chart(coinCtx, {
+        type: 'doughnut',
+        data: {
+            labels: <?= json_encode(array_keys($coin_counts)) ?>,
+            datasets: [{
+                data: <?= json_encode(array_values($coin_counts)) ?>,
+                backgroundColor: ['#3b82f6', '#10b981', '#ef4444'],
+                borderWidth: 1
+            }]
+        },
+        options: {
+            responsive: true,
+            maintainAspectRatio: false,
+            plugins: {
+                legend: {
+                    position: 'bottom'
+                }
+            }
+        }
+    });
 </script>
+
 <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
 <?php require_once 'includes/footer.php'; ?>

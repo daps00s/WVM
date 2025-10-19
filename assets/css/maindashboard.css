@@ -28,6 +28,60 @@
     margin: 0;
 }
 
+/* Alert Scroll Container */
+.alert-scroll-container {
+    max-height: 200px;
+    overflow-y: auto;
+    border: 1px solid #e0e0e0;
+    border-radius: 8px;
+    padding: 10px;
+    background: #f9f9f9;
+    margin: 10px 0;
+}
+
+.alert-scroll-container ul {
+    margin: 0;
+    padding: 0;
+    list-style: none;
+}
+
+.alert-scroll-container li {
+    padding: 12px;
+    margin-bottom: 8px;
+    background: white;
+    border-radius: 6px;
+    border-left: 4px solid #dc3545;
+    box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+}
+
+.alert-scroll-container li:last-child {
+    margin-bottom: 0;
+}
+
+.alert-scroll-container strong {
+    color: #dc3545;
+    font-size: 1.1em;
+}
+
+/* Scrollbar Styling */
+.alert-scroll-container::-webkit-scrollbar {
+    width: 8px;
+}
+
+.alert-scroll-container::-webkit-scrollbar-track {
+    background: #f1f1f1;
+    border-radius: 4px;
+}
+
+.alert-scroll-container::-webkit-scrollbar-thumb {
+    background: #c1c1c1;
+    border-radius: 4px;
+}
+
+.alert-scroll-container::-webkit-scrollbar-thumb:hover {
+    background: #a8a8a8;
+}
+
 .stats-grid {
     display: grid;
     grid-template-columns: 1fr;
@@ -333,6 +387,91 @@
     position: relative;
 }
 
+/* Static Alert Modal Fix */
+.modal.alert-modal {
+    position: static;
+    display: block !important;
+    background-color: transparent;
+    padding: 0;
+    margin: 20px auto;
+    height: auto;
+    width: 100%;
+    max-width: 600px;
+}
+
+.modal.alert-modal .modal-content {
+    margin: 0;
+    max-width: 100%;
+    width: 100%;
+    animation: slideDown 0.5s ease-out;
+    border: 2px solid #dc3545;
+    background: #fff;
+}
+
+/* Ensure alert scroll container works */
+.alert-scroll-container {
+    max-height: 300px;
+    overflow-y: auto;
+    border: 1px solid #e0e0e0;
+    border-radius: 8px;
+    padding: 15px;
+    background: #f9f9f9;
+    margin: 10px 0;
+}
+
+.alert-scroll-container ul {
+    margin: 0;
+    padding: 0;
+    list-style: none;
+}
+
+.alert-scroll-container li {
+    padding: 15px;
+    margin-bottom: 10px;
+    background: white;
+    border-radius: 8px;
+    border-left: 4px solid #dc3545;
+    box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+}
+
+.alert-scroll-container li:last-child {
+    margin-bottom: 0;
+}
+
+.alert-scroll-container strong {
+    color: #dc3545;
+    font-size: 1.1em;
+}
+
+/* Scrollbar Styling */
+.alert-scroll-container::-webkit-scrollbar {
+    width: 8px;
+}
+
+.alert-scroll-container::-webkit-scrollbar-track {
+    background: #f1f1f1;
+    border-radius: 4px;
+}
+
+.alert-scroll-container::-webkit-scrollbar-thumb {
+    background: #c1c1c1;
+    border-radius: 4px;
+}
+
+.alert-scroll-container::-webkit-scrollbar-thumb:hover {
+    background: #a8a8a8;
+}
+
+@keyframes slideDown {
+    from {
+        transform: translateY(-20px);
+        opacity: 0;
+    }
+    to {
+        transform: translateY(0);
+        opacity: 1;
+    }
+}
 .close-modal {
     position: absolute;
     right: 15px;

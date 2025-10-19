@@ -110,16 +110,15 @@ $transactions = $pdo->query("SELECT t.transaction_id, t.amount_dispensed, t.Date
     </div>
 </div>
 
-<!-- Low Water Level Modal -->
-<div class="modal" id="lowWaterModal">
+<!-- Low Water Level Alert Section (Static) -->
+<?php if (!empty($alerts)): ?>
+<div class="modal alert-modal" id="lowWaterModal">
     <div class="modal-content">
-        <span class="close-modal">×</span>
-        <h2>Low Water Level Alerts</h2>
+        <!-- No close button for static alert -->
+        <h2>🚨 Low Water Level Alert</h2>
         <div class="alert-list">
-            <?php if (empty($alerts)): ?>
-                <p>No low water level alerts at this time.</p>
-            <?php else: ?>
-                <p>The following machines have low water levels:</p>
+            <p><strong>Urgent Attention Required!</strong> The following machines have low water levels:</p>
+            <div class="alert-scroll-container">
                 <ul>
                     <?php foreach ($alerts as $alert): ?>
                         <li>
@@ -132,31 +131,46 @@ $transactions = $pdo->query("SELECT t.transaction_id, t.amount_dispensed, t.Date
                         </li>
                     <?php endforeach; ?>
                 </ul>
-            <?php endif; ?>
+            </div>
         </div>
-        <?php if (!empty($alerts) && isset($_SESSION['admin_role']) && $_SESSION['admin_role'] == 'admin'): ?>
-            <h3>Record Water Refill</h3>
-            <form id="refillForm">
-                <div class="input-group">
-                    <label for="refillDispenserId">Select Machine</label>
-                    <select name="dispenser_id" id="refillDispenserId" required>
-                        <?php foreach ($alerts as $alert): ?>
-                            <option value="<?php echo $alert['dispenser_id']; ?>">
-                                <?php echo htmlspecialchars($alert['machine_name']) . ' (' . htmlspecialchars($alert['location_name'] ?? 'Not Deployed') . ')'; ?>
-                            </option>
-                        <?php endforeach; ?>
-                    </select>
-                </div>
-                <div class="input-group">
-                    <label for="refillAmount">Amount Added (Liters)</label>
-                    <input type="number" id="refillAmount" name="amount" step="0.1" min="0.1" required>
-                </div>
-                <button type="submit" class="btn-primary">Submit Refill</button>
-            </form>
-        <?php endif; ?>
-        <button type="button" class="btn-primary okay-modal">Okay</button>
+        
+        <div class="modal-actions">
+            <?php if (isset($_SESSION['admin_role']) && $_SESSION['admin_role'] == 'admin'): ?>
+                <h3>Quick Actions</h3>
+                <form id="refillForm">
+                    <div class="input-group">
+                        <label for="refillDispenserId">Select Machine</label>
+                        <select name="dispenser_id" id="refillDispenserId" required>
+                            <?php foreach ($alerts as $alert): ?>
+                                <option value="<?php echo $alert['dispenser_id']; ?>">
+                                    <?php echo htmlspecialchars($alert['machine_name']) . ' (' . htmlspecialchars($alert['location_name'] ?? 'Not Deployed') . ')'; ?>
+                                </option>
+                            <?php endforeach; ?>
+                        </select>
+                    </div>
+                    <div class="input-group">
+                        <label for="refillAmount">Amount Added (Liters)</label>
+                        <input type="number" id="refillAmount" name="amount" step="0.1" min="0.1" required>
+                    </div>
+                    <button type="submit" class="btn-primary">
+                        <i class="fas fa-fill-drip"></i> Refill Now
+                    </button>
+                </form>
+            <?php endif; ?>
+            
+            <div class="action-buttons">
+                <a href="water_levels.php" class="btn-secondary">
+                    <i class="fas fa-tint"></i> View All Water Levels
+                </a>
+                
+                <button type="button" class="btn-primary acknowledge-btn">
+                    <i class="fas fa-check"></i> Acknowledge Alert
+                </button>
+            </div>
+        </div>
     </div>
 </div>
+<?php endif; ?>
 
 <!-- Recent Transactions Modal -->
 <div class="modal" id="recentTransactionsModal">
@@ -181,13 +195,62 @@ $transactions = $pdo->query("SELECT t.transaction_id, t.amount_dispensed, t.Date
         </div>
     </div>
 </div>
+
+<!-- Audio element for alert sound -->
+<audio id="alertSound" preload="auto" loop>
+    <source src="assets/sounds/alert.mp3" type="audio/mpeg">
+    <source src="assets/sounds/alert.wav" type="audio/wav">
+</audio>
+
 <script>
 document.addEventListener('DOMContentLoaded', function() {
-    // Low Water Modal
-    const lowWaterModal = document.getElementById('lowWaterModal');
+    // Audio element for alert sound
+    const alertSound = document.getElementById('alertSound');
+    let soundInterval;
+    
+    // Auto start sound if alerts exist
     <?php if (!empty($alerts) && !$_SESSION['low_water_modal_shown']): ?>
-        lowWaterModal.style.display = 'block';
+    setTimeout(() => {
+        startAlertSound();
+    }, 1000);
     <?php endif; ?>
+
+    // Function to start looping alert sound
+    function startAlertSound() {
+        if (alertSound) {
+            alertSound.volume = 0.5; // Set volume to 50% for looping
+            alertSound.loop = true; // Enable looping
+            
+            const playSound = () => {
+                alertSound.play().catch(error => {
+                    console.log('Audio play failed:', error);
+                    // Retry every 2 seconds if failed
+                    setTimeout(playSound, 2000);
+                });
+            };
+            
+            playSound(); // Initial play
+            
+            // Keep trying to play if it stops
+            soundInterval = setInterval(() => {
+                if (alertSound.paused) {
+                    playSound();
+                }
+            }, 3000);
+        }
+    }
+
+    // Function to stop alert sound
+    function stopAlertSound() {
+        if (alertSound) {
+            alertSound.pause();
+            alertSound.currentTime = 0;
+            alertSound.loop = false;
+            if (soundInterval) {
+                clearInterval(soundInterval);
+            }
+        }
+    }
 
     // Recent Transactions Modal
     const transactionsModal = document.getElementById('recentTransactionsModal');
@@ -198,46 +261,64 @@ document.addEventListener('DOMContentLoaded', function() {
         transactionsModal.style.display = 'block';
     });
 
-    // Close modals
+    // Close modals (only for non-alert modals or when close button is present)
     document.querySelectorAll('.close-modal').forEach(button => {
         button.addEventListener('click', function() {
-            this.closest('.modal').style.display = 'none';
-            if (this.closest('.modal').id === 'lowWaterModal') {
-                fetch('set_modal_flag.php', {
-                    method: 'POST',
-                    headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({ low_water_modal_shown: true })
-                });
+            const modal = this.closest('.modal');
+            modal.style.display = 'none';
+            if (modal.id === 'lowWaterModal') {
+                stopAlertSound();
+                setModalFlag();
             }
         });
     });
 
-    // Okay button for low water modal
+    // Acknowledge button for initial alert modal (no close button)
+    const acknowledgeBtn = document.querySelector('.acknowledge-btn');
+    if (acknowledgeBtn) {
+        acknowledgeBtn.addEventListener('click', function() {
+            lowWaterModal.style.display = 'none';
+            stopAlertSound();
+            setModalFlag();
+        });
+    }
+
+    // Okay button for regular low water modal
     const okayModal = document.querySelector('.okay-modal');
     if (okayModal) {
         okayModal.addEventListener('click', function() {
             lowWaterModal.style.display = 'none';
-            fetch('set_modal_flag.php', {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ low_water_modal_shown: true })
-            });
+            stopAlertSound();
+            setModalFlag();
         });
     }
 
-    // Close modals when clicking outside
+    // Close modals when clicking outside (only if close button exists)
     window.addEventListener('click', function(event) {
         if (event.target.className === 'modal') {
-            event.target.style.display = 'none';
-            if (event.target.id === 'lowWaterModal') {
-                fetch('set_modal_flag.php', {
-                    method: 'POST',
-                    headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({ low_water_modal_shown: true })
-                });
+            const modal = event.target;
+            // Only close if it's not the initial alert modal or if it has close button
+            const hasCloseButton = modal.querySelector('.close-modal');
+            if (hasCloseButton || !modal.classList.contains('alert-modal')) {
+                modal.style.display = 'none';
+                if (modal.id === 'lowWaterModal') {
+                    stopAlertSound();
+                    setModalFlag();
+                }
             }
         }
     });
+
+    // Function to set modal flag
+    function setModalFlag() {
+        fetch('set_modal_flag.php', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ low_water_modal_shown: true })
+        }).catch(error => {
+            console.error('Error setting modal flag:', error);
+        });
+    }
 
     // Refill form submission
     const refillForm = document.getElementById('refillForm');
@@ -261,7 +342,7 @@ document.addEventListener('DOMContentLoaded', function() {
             .then(data => {
                 if (data.success) {
                     showNotification('success', data.message);
-                    lowWaterModal.style.display = 'none';
+                    stopAlertSound();
                     setTimeout(() => window.location.reload(), 1500);
                 } else {
                     showNotification('error', data.message);
@@ -286,6 +367,34 @@ document.addEventListener('DOMContentLoaded', function() {
             setTimeout(() => toast.remove(), 500);
         }, 2500);
     }
+
+    // Optional: Play sound when water level stat card is clicked (for testing)
+    const waterLevelCard = document.querySelector('.stat-card.water-level');
+    if (waterLevelCard && <?php echo !empty($alerts) ? 'true' : 'false'; ?>) {
+        waterLevelCard.addEventListener('click', function(e) {
+            e.preventDefault();
+            lowWaterModal.style.display = 'block';
+            startAlertSound();
+        });
+    }
+
+    // Auto-check for alerts and show modal if new alerts appear
+    function checkForNewAlerts() {
+        fetch('check_alerts.php')
+            .then(response => response.json())
+            .then(data => {
+                if (data.hasAlerts && !lowWaterModal.style.display || lowWaterModal.style.display === 'none') {
+                    lowWaterModal.style.display = 'block';
+                    startAlertSound();
+                } else if (!data.hasAlerts) {
+                    stopAlertSound();
+                }
+            })
+            .catch(error => console.error('Error checking alerts:', error));
+    }
+
+    // Check for alerts every 30 seconds
+    setInterval(checkForNewAlerts, 30000);
 });
 </script>
 
