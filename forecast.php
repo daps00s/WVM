@@ -87,9 +87,17 @@ $forecast_labels = []; // Initialize forecast_labels to prevent undefined variab
 if ($result && $result->num_rows > 0) {
     while($row = $result->fetch_assoc()) {
         $historical_labels[] = ($period === '7days' || $period === '30days' || $period === 'custom') ? $row["day"] : $row["month"];
-        $historical_demands[] = (float)$row["total_dispensed"];
+        
+        // Convert mL to L for display (divide by 1000)
+        $total_dispensed_liters = (float)$row["total_dispensed"] / 1000;
+        $historical_demands[] = $total_dispensed_liters;
+        
         $transaction_counts[] = (int)$row["transaction_count"];
-        $avg_per_transaction[] = (float)$row["avg_per_transaction"];
+        
+        // Convert average to liters as well
+        $avg_per_transaction_liters = (float)$row["avg_per_transaction"] / 1000;
+        $avg_per_transaction[] = $avg_per_transaction_liters;
+        
         $time_indices[] = $index;
         $index++;
     }
@@ -174,7 +182,7 @@ if (count($time_indices) >= 2) {
         for ($i = 1; $i <= $forecast_length; $i++) {
             $next_index = $last_index + $i;
             $predicted = $slope * $next_index + $intercept;
-            $linear_forecast[] = max(10, $predicted); // Minimum 10L baseline
+            $linear_forecast[] = max(0.01, $predicted); // Minimum 0.01L baseline (10mL)
             
             $last_date->add(new DateInterval($interval));
             $forecast_labels[] = ($period === '7days' || $period === '30days' || $period === 'custom') ? $last_date->format('Y-m-d') : $last_date->format('Y-m');
@@ -218,7 +226,7 @@ $all_labels = array_merge($historical_labels, $forecast_labels);
 $all_demands = array_merge($historical_demands, $linear_forecast);
 $historical_count = count($historical_labels);
 
-// Calculate key metrics
+// Calculate key metrics (all in liters now)
 $total_historical = array_sum($historical_demands);
 $average_daily = count($historical_demands) > 0 ? $total_historical / count($historical_demands) : 0;
 $peak_demand = count($historical_demands) > 0 ? max($historical_demands) : 0;
@@ -496,7 +504,7 @@ $conn->close();
                 <div class="stat-icon"><i class="fas fa-tint"></i></div>
                 <div class="stat-content">
                     <div class="stat-title">Total Historical Usage</div>
-                    <div class="stat-value"><?= number_format($total_historical, 0) ?>L</div>
+                    <div class="stat-value"><?= number_format($total_historical, 1) ?>L</div>
                     <div class="stat-change success">
                         <i class="fas fa-chart-line"></i> Last <?= $period === '7days' ? '7 Days' : ($period === '30days' ? '30 Days' : 'Period') ?>
                     </div>
@@ -662,6 +670,11 @@ document.addEventListener('DOMContentLoaded', function() {
                     },
                     grid: {
                         color: 'rgba(0,0,0,0.1)'
+                    },
+                    ticks: {
+                        callback: function(value) {
+                            return value.toFixed(1) + 'L';
+                        }
                     }
                 },
                 x: {
