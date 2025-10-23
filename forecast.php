@@ -80,6 +80,8 @@ $avg_per_transaction = [];
 $time_indices = [];
 $index = 0;
 
+$forecast_labels = []; // Initialize forecast_labels to prevent undefined variable error
+
 if ($result->num_rows > 0) {
     while($row = $result->fetch_assoc()) {
         $historical_labels[] = ($period === '7days' || $period === '30days' || $period === 'custom') ? $row["day"] : $row["month"];

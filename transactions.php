@@ -71,11 +71,32 @@ $active_machines = $pdo->query("SELECT COUNT(DISTINCT dispenser_id) as total FRO
     display: flex;
     align-items: center;
     gap: 16px;
+    position: relative;
+    overflow: hidden;
 }
 
 .stat-card:hover {
     transform: translateY(-2px);
     box-shadow: 0 8px 15px rgba(0, 0, 0, 0.15);
+}
+
+.stat-card.updating {
+    animation: pulse 0.6s ease-in-out;
+}
+
+@keyframes pulse {
+    0% { 
+        transform: scale(1);
+        box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+    }
+    50% { 
+        transform: scale(1.02);
+        box-shadow: 0 8px 20px rgba(74, 144, 226, 0.3);
+    }
+    100% { 
+        transform: scale(1);
+        box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+    }
 }
 
 .stat-icon {
@@ -87,10 +108,14 @@ $active_machines = $pdo->query("SELECT COUNT(DISTINCT dispenser_id) as total FRO
     justify-content: center;
     font-size: 24px;
     color: white;
+    position: relative;
+    z-index: 2;
 }
 
 .stat-content {
     flex: 1;
+    position: relative;
+    z-index: 2;
 }
 
 .stat-title {
@@ -108,6 +133,7 @@ $active_machines = $pdo->query("SELECT COUNT(DISTINCT dispenser_id) as total FRO
     color: #1e293b;
     margin-bottom: 8px;
     line-height: 1;
+    transition: all 0.3s ease;
 }
 
 .stat-change {
@@ -120,6 +146,41 @@ $active_machines = $pdo->query("SELECT COUNT(DISTINCT dispenser_id) as total FRO
 
 .stat-change.success {
     color: #059669;
+}
+
+/* Update indicator */
+.update-indicator {
+    position: absolute;
+    top: 10px;
+    right: 10px;
+    width: 10px;
+    height: 10px;
+    border-radius: 50%;
+    background: #10b981;
+    opacity: 0;
+    transition: all 0.3s ease;
+    box-shadow: 0 0 0 0 rgba(16, 185, 129, 0.7);
+    animation: none;
+}
+
+.update-indicator.active {
+    opacity: 1;
+    animation: pulse-ring 1.5s infinite;
+}
+
+@keyframes pulse-ring {
+    0% {
+        transform: scale(0.95);
+        box-shadow: 0 0 0 0 rgba(16, 185, 129, 0.7);
+    }
+    70% {
+        transform: scale(1);
+        box-shadow: 0 0 0 10px rgba(16, 185, 129, 0);
+    }
+    100% {
+        transform: scale(1);
+        box-shadow: 0 0 0 0 rgba(16, 185, 129, 0);
+    }
 }
 
 /* Stat card colors */
@@ -208,41 +269,45 @@ $active_machines = $pdo->query("SELECT COUNT(DISTINCT dispenser_id) as total FRO
 
         <!-- Stat Cards Section -->
         <div class="stats-grid">
-            <div class="stat-card">
+            <div class="stat-card" id="stat-total-transactions">
+                <div class="update-indicator" id="indicator-transactions"></div>
                 <div class="stat-icon"><i class="fas fa-exchange-alt"></i></div>
                 <div class="stat-content">
                     <div class="stat-title">Total Transactions</div>
-                    <div class="stat-value"><?php echo number_format($total_transactions['total']); ?></div>
+                    <div class="stat-value" id="value-total-transactions"><?php echo number_format($total_transactions['total']); ?></div>
                     <div class="stat-change success">
                         <i class="fas fa-chart-line"></i> Last 30 Days
                     </div>
                 </div>
             </div>
-            <div class="stat-card">
+            <div class="stat-card" id="stat-total-volume">
+                <div class="update-indicator" id="indicator-volume"></div>
                 <div class="stat-icon"><i class="fas fa-tint"></i></div>
                 <div class="stat-content">
                     <div class="stat-title">Total Volume</div>
-                    <div class="stat-value"><?php echo number_format($total_volume['total']); ?>ml</div>
+                    <div class="stat-value" id="value-total-volume"><?php echo number_format($total_volume['total']); ?>ml</div>
                     <div class="stat-change success">
                         <i class="fas fa-water"></i> Water Dispensed
                     </div>
                 </div>
             </div>
-            <div class="stat-card">
+            <div class="stat-card" id="stat-total-revenue">
+                <div class="update-indicator" id="indicator-revenue"></div>
                 <div class="stat-icon"><i class="fas fa-coins"></i></div>
                 <div class="stat-content">
                     <div class="stat-title">Total Revenue</div>
-                    <div class="stat-value">₱<?php echo number_format($total_revenue['total']); ?></div>
+                    <div class="stat-value" id="value-total-revenue">₱<?php echo number_format($total_revenue['total']); ?></div>
                     <div class="stat-change success">
                         <i class="fas fa-money-bill-wave"></i> Collected
                     </div>
                 </div>
             </div>
-            <div class="stat-card">
+            <div class="stat-card" id="stat-active-machines">
+                <div class="update-indicator" id="indicator-machines"></div>
                 <div class="stat-icon"><i class="fas fa-cogs"></i></div>
                 <div class="stat-content">
                     <div class="stat-title">Active Machines</div>
-                    <div class="stat-value"><?php echo $active_machines['total']; ?></div>
+                    <div class="stat-value" id="value-active-machines"><?php echo $active_machines['total']; ?></div>
                     <div class="stat-change success">
                         <i class="fas fa-microchip"></i> Processing
                     </div>
@@ -298,6 +363,12 @@ let searchTerm = '<?php echo $searchTerm; ?>';
 let currentMachineId = '<?php echo $machineId; ?>';
 let knownTransactionIds = new Set();
 let totalPages = 1;
+let previousStats = {
+    total_transactions: <?php echo $total_transactions['total']; ?>,
+    total_volume: <?php echo $total_volume['total']; ?>,
+    total_revenue: <?php echo $total_revenue['total']; ?>,
+    active_machines: <?php echo $active_machines['total']; ?>
+};
 
 // Initialize known transactions
 document.addEventListener('DOMContentLoaded', function() {
@@ -335,7 +406,6 @@ function filterAndPaginate() {
     const rows = document.querySelectorAll('#transactionsTable tbody tr');
     const filteredRows = [];
     
-    // Filter rows based on search term and machine filter
     rows.forEach(row => {
         const transactionId = row.cells[0].textContent.toLowerCase();
         const dateTime = row.cells[1].textContent.toLowerCase();
@@ -345,7 +415,6 @@ function filterAndPaginate() {
         const waterType = row.cells[5].textContent.toLowerCase();
         const coinType = row.cells[6].textContent.toLowerCase();
         
-        // Check if row matches search term
         const matchesSearch = searchTerm === '' || 
             transactionId.includes(searchTerm.toLowerCase()) ||
             dateTime.includes(searchTerm.toLowerCase()) ||
@@ -355,7 +424,6 @@ function filterAndPaginate() {
             waterType.includes(searchTerm.toLowerCase()) ||
             coinType.includes(searchTerm.toLowerCase());
         
-        // Check if row matches machine filter
         const matchesMachine = currentMachineId === '' || 
             row.getAttribute('data-machine-id') === currentMachineId;
         
@@ -367,12 +435,10 @@ function filterAndPaginate() {
         }
     });
     
-    // Calculate pagination
     const totalRows = filteredRows.length;
     totalPages = rowsPerPage === 'all' ? 1 : Math.ceil(totalRows / parseInt(rowsPerPage));
     currentPage = Math.min(currentPage, Math.max(1, totalPages));
     
-    // Show/hide rows based on current page
     filteredRows.forEach((row, index) => {
         if (rowsPerPage === 'all') {
             row.style.display = '';
@@ -383,7 +449,6 @@ function filterAndPaginate() {
         }
     });
     
-    // Update pagination controls
     updatePagination();
 }
 
@@ -403,14 +468,11 @@ function updatePagination() {
     prevBtn.style.display = 'inline-block';
     nextBtn.style.display = 'inline-block';
     
-    // Update page indicator
     pageIndicator.textContent = `${currentPage}/${totalPages}`;
     
-    // Update button states
     prevBtn.disabled = currentPage === 1;
     nextBtn.disabled = currentPage === totalPages || totalPages === 0;
     
-    // Update button styles based on state
     if (prevBtn.disabled) {
         prevBtn.style.opacity = '0.5';
         prevBtn.style.cursor = 'not-allowed';
@@ -428,17 +490,114 @@ function updatePagination() {
     }
 }
 
+// **FIXED: INSTANT STATISTICS UPDATE FUNCTION**
+function updateStatistics(data) {
+    const transactionsElem = document.getElementById('value-total-transactions');
+    const volumeElem = document.getElementById('value-total-volume');
+    const revenueElem = document.getElementById('value-total-revenue');
+    const machinesElem = document.getElementById('value-active-machines');
+    
+    let hasUpdates = false;
+    
+    // Check and update transactions
+    const currentTransactions = parseInt(transactionsElem.textContent.replace(/,/g, ''));
+    if (currentTransactions !== data.total_transactions) {
+        transactionsElem.textContent = data.total_transactions.toLocaleString();
+        document.getElementById('stat-total-transactions').classList.add('updating');
+        document.getElementById('indicator-transactions').classList.add('active');
+        hasUpdates = true;
+    }
+    
+    // Check and update volume
+    const currentVolume = parseInt(volumeElem.textContent.replace(/,/g, '').replace('ml', ''));
+    if (currentVolume !== data.total_volume) {
+        volumeElem.textContent = data.total_volume.toLocaleString() + 'ml';
+        document.getElementById('stat-total-volume').classList.add('updating');
+        document.getElementById('indicator-volume').classList.add('active');
+        hasUpdates = true;
+    }
+    
+    // Check and update revenue
+    const currentRevenue = parseInt(revenueElem.textContent.replace(/[₱,]/g, ''));
+    if (currentRevenue !== data.total_revenue) {
+        revenueElem.textContent = '₱' + data.total_revenue.toLocaleString();
+        document.getElementById('stat-total-revenue').classList.add('updating');
+        document.getElementById('indicator-revenue').classList.add('active');
+        hasUpdates = true;
+    }
+    
+    // Check and update machines
+    const currentMachines = parseInt(machinesElem.textContent);
+    if (currentMachines !== data.active_machines) {
+        machinesElem.textContent = data.active_machines;
+        document.getElementById('stat-active-machines').classList.add('updating');
+        document.getElementById('indicator-machines').classList.add('active');
+        hasUpdates = true;
+    }
+    
+    // Clear animations after 600ms
+    if (hasUpdates) {
+        setTimeout(() => {
+            document.querySelectorAll('.stat-card').forEach(card => {
+                card.classList.remove('updating');
+            });
+            document.querySelectorAll('.update-indicator').forEach(indicator => {
+                indicator.classList.remove('active');
+            });
+        }, 600);
+    }
+}
+
+// **FIXED: OPTIMIZED STATISTICS REFRESH**
+function refreshStatistics() {
+    const machineId = document.getElementById('machineFilter').value;
+    
+    const params = new URLSearchParams({
+        start: '<?php echo $startDate; ?>',
+        end: '<?php echo $endDate; ?>'
+    });
+    if (machineId) params.set('machine', machineId);
+    
+    fetch(`api/get_statistics.php?${params.toString()}`, {
+        method: 'GET',
+        headers: {
+            'Accept': 'application/json',
+        }
+    })
+    .then(response => {
+        if (!response.ok) {
+            throw new Error(`HTTP error! status: ${response.status}`);
+        }
+        return response.json();
+    })
+    .then(data => {
+        // Update statistics instantly
+        updateStatistics(data);
+        
+        // Store new values for comparison
+        previousStats = {
+            total_transactions: data.total_transactions,
+            total_volume: data.total_volume,
+            total_revenue: data.total_revenue,
+            active_machines: data.active_machines
+        };
+    })
+    .catch(error => {
+        console.error('Error refreshing statistics:', error);
+    });
+}
+
 // Refresh transactions
 function refreshTransactions() {
     const machineId = document.getElementById('machineFilter').value;
     const searchTerm = document.getElementById('searchInput').value;
     
-    // Update current machine ID
     currentMachineId = machineId;
     
-    const params = new URLSearchParams();
-    params.set('start', '<?php echo $startDate; ?>');
-    params.set('end', '<?php echo $endDate; ?>');
+    const params = new URLSearchParams({
+        start: '<?php echo $startDate; ?>',
+        end: '<?php echo $endDate; ?>'
+    });
     if (machineId) params.set('machine', machineId);
     if (searchTerm) params.set('search', searchTerm);
     
@@ -454,11 +613,11 @@ function refreshTransactions() {
         .then(data => {
             const tbody = document.querySelector('.data-table tbody');
             
-            // Sort data to ensure newest transactions are first
             data.sort((a, b) => new Date(b.DateAndTime) - new Date(a.DateAndTime));
             
-            // Update table content
             tbody.innerHTML = '';
+            let newTransactionsFound = false;
+            
             data.forEach(transaction => {
                 const date = new Date(transaction.DateAndTime);
                 const formattedDate = date.toLocaleString('en-US', {
@@ -471,7 +630,6 @@ function refreshTransactions() {
                     hour12: true
                 });
                 
-                // Only highlight if this is the first time we've seen this transaction
                 const isNew = !knownTransactionIds.has(transaction.transaction_id);
                 
                 const row = `
@@ -487,14 +645,13 @@ function refreshTransactions() {
                 `;
                 tbody.innerHTML += row;
                 
-                // Add to known transactions to prevent future highlighting
                 if (isNew) {
                     knownTransactionIds.add(transaction.transaction_id);
+                    newTransactionsFound = true;
                 }
             });
             
-            // Ensure new transactions are visible by resetting to first page if new transactions are present
-            if (data.some(t => !knownTransactionIds.has(t.transaction_id))) {
+            if (newTransactionsFound) {
                 currentPage = 1;
             }
             
@@ -512,7 +669,6 @@ document.addEventListener('DOMContentLoaded', function() {
         rowsPerPage = urlParams.get('rows');
     }
     
-    // Initialize current machine ID from URL
     currentMachineId = '<?php echo $machineId; ?>';
     
     // Set up pagination button event listeners
@@ -547,7 +703,6 @@ document.addEventListener('DOMContentLoaded', function() {
         filterAndPaginate();
     });
     
-    // Machine filter event listener
     document.getElementById('machineFilter').addEventListener('change', function() {
         currentMachineId = this.value;
         currentPage = 1;
@@ -555,8 +710,16 @@ document.addEventListener('DOMContentLoaded', function() {
         updateURL();
     });
     
-    // Auto-refresh every 1 seconds
-    setInterval(refreshTransactions, 1000);
+    // **CRITICAL: START AUTO-REFRESH EVERY 1 SECOND**
+    const refreshInterval = setInterval(() => {
+        refreshTransactions();
+        refreshStatistics();  // This will now work INSTANTLY
+    }, 1000);
+    
+    // Clean up interval on page unload
+    window.addEventListener('beforeunload', () => {
+        clearInterval(refreshInterval);
+    });
 });
 </script>
 
