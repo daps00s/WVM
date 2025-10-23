@@ -73,6 +73,7 @@ if ($period === '7days') {
 
 $result = $conn->query($sql);
 
+// Initialize arrays with default values
 $historical_labels = [];
 $historical_demands = [];
 $transaction_counts = [];
@@ -82,7 +83,8 @@ $index = 0;
 
 $forecast_labels = []; // Initialize forecast_labels to prevent undefined variable error
 
-if ($result->num_rows > 0) {
+// FIX: Check if query was successful before processing results
+if ($result && $result->num_rows > 0) {
     while($row = $result->fetch_assoc()) {
         $historical_labels[] = ($period === '7days' || $period === '30days' || $period === 'custom') ? $row["day"] : $row["month"];
         $historical_demands[] = (float)$row["total_dispensed"];
@@ -91,6 +93,9 @@ if ($result->num_rows > 0) {
         $time_indices[] = $index;
         $index++;
     }
+} else {
+    // Handle case when query fails or returns no data
+    $notification = "warning|No transaction data found for the selected period.";
 }
 
 // Enhanced forecasting with multiple methods
