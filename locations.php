@@ -53,17 +53,17 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     }
 }
 
-// Fetch locations with machine count and total liters for table
+// Fetch locations with machine count and total liters for table (convert ML to Liters)
 $locations = $pdo->query("SELECT l.*, COUNT(dl.dispenser_id) as machine_count, 
-                          COALESCE(SUM(t.amount_dispensed), 0) as total_liters
+                          COALESCE(SUM(t.amount_dispensed) / 1000, 0) as total_liters
                           FROM location l
                           LEFT JOIN dispenserlocation dl ON l.location_id = dl.location_id AND dl.Status = 1
                           LEFT JOIN transaction t ON dl.dispenser_id = t.dispenser_id
                           GROUP BY l.location_id")->fetchAll();
 
-// Fetch all locations for map (only active dispensers) - including address
+// Fetch all locations for map (only active dispensers) - including address (convert ML to Liters)
 $all_locations = $pdo->query("SELECT l.location_id, l.location_name, l.address, l.latitude, l.longitude, 
-                              COALESCE(SUM(t.amount_dispensed), 0) as total_liters,
+                              COALESCE(SUM(t.amount_dispensed) / 1000, 0) as total_liters,
                               GROUP_CONCAT(DISTINCT d.Description) as descriptions
                               FROM location l
                               LEFT JOIN dispenserlocation dl ON l.location_id = dl.location_id AND dl.Status = 1
@@ -72,9 +72,9 @@ $all_locations = $pdo->query("SELECT l.location_id, l.location_name, l.address, 
                               WHERE l.latitude IS NOT NULL AND l.longitude IS NOT NULL
                               GROUP BY l.location_id")->fetchAll();
 
-// Fetch ITC-specific dispensers (at CET - ITC coordinates)
+// Fetch ITC-specific dispensers (at CET - ITC coordinates) (convert ML to Liters)
 $itc_dispensers = $pdo->query("SELECT l.location_id, l.location_name, l.address, l.latitude, l.longitude, 
-                               COALESCE(SUM(t.amount_dispensed), 0) as total_liters,
+                               COALESCE(SUM(t.amount_dispensed) / 1000, 0) as total_liters,
                                GROUP_CONCAT(DISTINCT d.Description) as descriptions
                                FROM location l
                                LEFT JOIN dispenserlocation dl ON l.location_id = dl.location_id AND dl.Status = 1
@@ -83,9 +83,9 @@ $itc_dispensers = $pdo->query("SELECT l.location_id, l.location_name, l.address,
                                WHERE l.latitude = 15.63954742 AND l.longitude = 120.41917920
                                GROUP BY l.location_id")->fetchAll();
 
-// Fetch top 5 locations (highest total liters dispensed)
+// Fetch top 5 locations (highest total liters dispensed) (convert ML to Liters)
 $top_locations = $pdo->query("SELECT l.location_id, l.location_name, l.address, l.latitude, l.longitude, 
-                              COALESCE(SUM(t.amount_dispensed), 0) as total_liters,
+                              COALESCE(SUM(t.amount_dispensed) / 1000, 0) as total_liters,
                               GROUP_CONCAT(DISTINCT d.Description) as descriptions
                               FROM location l
                               LEFT JOIN dispenserlocation dl ON l.location_id = dl.location_id AND dl.Status = 1
@@ -96,9 +96,9 @@ $top_locations = $pdo->query("SELECT l.location_id, l.location_name, l.address, 
                               ORDER BY total_liters DESC
                               LIMIT 5")->fetchAll();
 
-// Fetch top 5 machines (highest total liters dispensed)
+// Fetch top 5 machines (highest total liters dispensed) (convert ML to Liters)
 $top_machines = $pdo->query("SELECT d.dispenser_id, d.Description, l.location_name, 
-                             COALESCE(SUM(t.amount_dispensed), 0) as total_liters
+                             COALESCE(SUM(t.amount_dispensed) / 1000, 0) as total_liters
                              FROM dispenser d
                              LEFT JOIN dispenserlocation dl ON d.dispenser_id = dl.dispenser_id AND dl.Status = 1
                              LEFT JOIN location l ON dl.location_id = l.location_id
@@ -107,13 +107,13 @@ $top_machines = $pdo->query("SELECT d.dispenser_id, d.Description, l.location_na
                              ORDER BY total_liters DESC
                              LIMIT 5")->fetchAll();
 
-// Get statistics for stat cards
+// Get statistics for stat cards (convert ML to Liters)
 $total_locations = $pdo->query("SELECT COUNT(*) as total FROM location")->fetch();
 $active_locations = $pdo->query("SELECT COUNT(DISTINCT location_id) as total FROM dispenserlocation WHERE Status = 1")->fetch();
 $total_dispensers = $pdo->query("SELECT COUNT(*) as total FROM dispenserlocation WHERE Status = 1")->fetch();
-$total_volume = $pdo->query("SELECT COALESCE(SUM(amount_dispensed), 0) as total FROM transaction")->fetch();
+$total_volume = $pdo->query("SELECT COALESCE(SUM(amount_dispensed) / 1000, 0) as total FROM transaction")->fetch();
 
-// Determine trend data based on GET parameters
+// Determine trend data based on GET parameters (convert ML to Liters)
 $trend_data = [];
 $interval = 30; // Default
 $is_custom = false;
@@ -123,7 +123,7 @@ if (isset($_GET['period'])) {
         $interval = 7;
     } elseif ($period === 'custom' && isset($_GET['start']) && isset($_GET['end'])) {
         $is_custom = true;
-        $stmt = $pdo->prepare("SELECT DATE(t.DateAndTime) as date, COALESCE(SUM(t.amount_dispensed), 0) as total_liters
+        $stmt = $pdo->prepare("SELECT DATE(t.DateAndTime) as date, COALESCE(SUM(t.amount_dispensed) / 1000, 0) as total_liters
                                FROM transaction t
                                LEFT JOIN dispenserlocation dl ON t.dispenser_id = dl.dispenser_id
                                WHERE dl.Status = 1 AND t.DateAndTime IS NOT NULL
@@ -135,7 +135,7 @@ if (isset($_GET['period'])) {
     }
 }
 if (!$is_custom) {
-    $stmt = $pdo->prepare("SELECT DATE(t.DateAndTime) as date, COALESCE(SUM(t.amount_dispensed), 0) as total_liters
+    $stmt = $pdo->prepare("SELECT DATE(t.DateAndTime) as date, COALESCE(SUM(t.amount_dispensed) / 1000, 0) as total_liters
                            FROM transaction t
                            LEFT JOIN dispenserlocation dl ON t.dispenser_id = dl.dispenser_id
                            WHERE dl.Status = 1 AND t.DateAndTime IS NOT NULL
@@ -355,7 +355,7 @@ $max_total_liters = $top_locations ? $top_locations[0]['total_liters'] : 1; // A
                 <div class="stat-icon"><i class="fas fa-tint"></i></div>
                 <div class="stat-content">
                     <div class="stat-title">Total Volume</div>
-                    <div class="stat-value"><?= number_format($total_volume['total'] ?? 0) ?>L</div>
+                    <div class="stat-value"><?= number_format($total_volume['total'] ?? 0, 1) ?>L</div>
                     <div class="stat-change success">
                         <i class="fas fa-water"></i> All Locations
                     </div>
