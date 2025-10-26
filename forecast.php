@@ -2,20 +2,6 @@
 $pageTitle = 'Water Trends & Forecast';
 require_once 'includes/header.php';
 
-// Database connection
-$servername = "127.0.0.1";
-$username = "root";
-$password = "";
-$dbname = "water_dispenser_system";
-
-// Create connection
-$conn = new mysqli($servername, $username, $password, $dbname);
-
-// Check connection
-if ($conn->connect_error) {
-    $notification = "error|Connection failed: " . $conn->connect_error;
-}
-
 // Initialize filter parameters
 $period = isset($_GET['period']) ? $_GET['period'] : '30days';
 $start_date = isset($_GET['start_date']) ? $_GET['start_date'] : null;
@@ -23,9 +9,9 @@ $end_date = isset($_GET['end_date']) ? $_GET['end_date'] : null;
 
 // Get the last transaction date or current date
 $last_transaction_query = "SELECT MAX(DateAndTime) as last_date FROM transaction";
-$last_transaction_result = $conn->query($last_transaction_query);
-$last_transaction_date = ($last_transaction_result && $last_transaction_result->num_rows > 0) 
-    ? $last_transaction_result->fetch_assoc()['last_date'] 
+$last_transaction_result = $pdo->query($last_transaction_query);
+$last_transaction_date = ($last_transaction_result && $last_transaction_result->rowCount() > 0) 
+    ? $last_transaction_result->fetch()['last_date'] 
     : date('Y-m-d');
 $last_transaction_date = $last_transaction_date ? date('Y-m-d', strtotime($last_transaction_date)) : date('Y-m-d');
 
@@ -71,7 +57,7 @@ if ($period === '7days') {
             ORDER BY YEAR(DateAndTime), MONTH(DateAndTime)";
 }
 
-$result = $conn->query($sql);
+$result = $pdo->query($sql);
 
 // Initialize arrays with default values
 $historical_labels = [];
@@ -84,8 +70,8 @@ $index = 0;
 $forecast_labels = []; // Initialize forecast_labels to prevent undefined variable error
 
 // FIX: Check if query was successful before processing results
-if ($result && $result->num_rows > 0) {
-    while($row = $result->fetch_assoc()) {
+if ($result && $result->rowCount() > 0) {
+    while($row = $result->fetch()) {
         $historical_labels[] = ($period === '7days' || $period === '30days' || $period === 'custom') ? $row["day"] : $row["month"];
         
         // Convert mL to L for display (divide by 1000)
@@ -299,8 +285,6 @@ function generate_forecast_explanation($historical, $forecast, $trend, $accuracy
     
     return $output;
 }
-
-$conn->close();
 ?>
 <link rel="stylesheet" href="assets/css/forecast.css">
 <style>
@@ -449,10 +433,99 @@ $conn->close();
 .accuracy-medium { background: #fff3cd; color: #856404; }
 .accuracy-low { background: #f8d7da; color: #721c24; }
 
+/* Override forecast.css to match machines.php layout */
+.content-area {
+    padding: 30px 0 0 0 !important;
+    background-color: var(--light) !important;
+    width: 100% !important;
+    margin-left: 0 !important;
+}
+
+.content-wrapper {
+    padding: 0 30px !important;
+    max-width: 100% !important;
+    margin: 0 auto !important;
+    min-height: auto !important;
+    position: relative !important;
+}
+
+.content-header {
+    display: flex !important;
+    justify-content: space-between !important;
+    align-items: center !important;
+    margin-bottom: 30px !important;
+    flex-direction: row !important;
+    padding: 0 !important;
+}
+
+.content-title {
+    font-size: 24px !important;
+    color: var(--secondary) !important;
+    font-weight: 600 !important;
+    text-align: left !important;
+}
+
+.content-actions {
+    display: flex !important;
+    justify-content: flex-end !important;
+    width: auto !important;
+}
+
+.control-panel {
+    width: auto !important;
+    max-width: none !important;
+    display: flex;
+    align-items: center;
+    gap: 10px;
+}
+
+.period-select {
+    width: 200px !important;
+    padding: 8px 12px !important;
+}
+
+.chart-container {
+    background-color: var(--white) !important;
+    padding: 20px !important;
+    border-radius: 10px !important;
+    box-shadow: 0 4px 6px rgba(0, 0, 0, 0.05) !important;
+    margin-bottom: 30px !important;
+    height: 400px !important;
+}
+
+/* Modal overrides to match machines.php */
+.modal {
+    z-index: 1000 !important;
+}
+
+.modal-content {
+    z-index: 1001 !important;
+    margin: 5% auto !important;
+    max-width: 500px !important;
+}
+
 /* Responsive design */
 @media (max-width: 1200px) {
     .stats-grid {
         grid-template-columns: repeat(2, 1fr);
+    }
+}
+
+@media (max-width: 992px) {
+    .content-area {
+        margin-left: 0 !important;
+        width: 100% !important;
+    }
+    
+    .content-header {
+        flex-direction: column;
+        align-items: flex-start;
+        gap: 15px;
+    }
+    
+    .content-actions {
+        width: 100%;
+        justify-content: flex-start;
     }
 }
 
@@ -467,6 +540,40 @@ $conn->close();
     
     .stat-value {
         font-size: 24px;
+    }
+    
+    .content-wrapper {
+        padding: 0 15px !important;
+    }
+    
+    .content-title {
+        font-size: 20px !important;
+    }
+    
+    .control-panel {
+        flex-direction: column;
+        align-items: flex-start;
+        width: 100%;
+    }
+    
+    .period-select {
+        width: 100% !important;
+    }
+    
+    .chart-container {
+        height: 300px !important;
+        padding: 15px !important;
+    }
+}
+
+@media (max-width: 576px) {
+    .content-wrapper {
+        padding: 0 10px !important;
+    }
+    
+    .chart-container {
+        height: 250px !important;
+        padding: 10px !important;
     }
 }
 </style>
@@ -485,7 +592,7 @@ $conn->close();
             <div class="content-actions">
                 <div class="control-panel">
                     <label for="periodSelect">Analysis Period:</label>
-                    <select id="periodSelect">
+                    <select id="periodSelect" class="period-select">
                         <option value="7days" <?= $period === '7days' ? 'selected' : '' ?>>7 Days Analysis</option>
                         <option value="30days" <?= $period === '30days' ? 'selected' : '' ?>>30 Days Analysis</option>
                         <option value="year" <?= $period === 'year' ? 'selected' : '' ?>>Yearly Analysis</option>
