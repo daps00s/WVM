@@ -608,7 +608,7 @@ function generateCSVReport($title, $columns, $data, $machineFilter, $timeFilter,
                 <div class="stat-icon"><i class="fas fa-tint"></i></div>
                 <div class="stat-content">
                     <div class="stat-title">Water Dispensed</div>
-                    <div class="stat-value"><?php echo number_format($transactionSummary['total_amount'], 2); ?>L</div>
+                    <div class="stat-value"><?php echo number_format($transactionSummary['total_amount'] / 1000, 2); ?>L</div>
                     <div class="stat-change success">
                         <i class="fas fa-water"></i> Total Volume
                     </div>
@@ -753,7 +753,7 @@ function generateCSVReport($title, $columns, $data, $machineFilter, $timeFilter,
                                 <td><?php echo date('M j, Y h:i A', strtotime($transaction['DateAndTime'])); ?></td>
                                 <td><?php echo htmlspecialchars($transaction['machine_name']); ?></td>
                                 <td><?php echo htmlspecialchars($transaction['location_name'] ?? 'N/A'); ?></td>
-                                <td><?php echo $transaction['amount_dispensed']; ?></td>
+                                <td><?php echo number_format($transaction['amount_dispensed'] / 1000, 2); ?></td>
                                 <td><?php echo number_format($transaction['coin_value'], 2); ?></td>
                             </tr>
                             <?php endforeach; ?>
@@ -770,7 +770,7 @@ function generateCSVReport($title, $columns, $data, $machineFilter, $timeFilter,
                 </div>
                 <div class="report-summary">
                     <?php if ($currentVisualType === 'table'): ?>
-                        <p>This report covers <?php echo $machineSummary['total_machines']; ?> machines, with <?php echo $machineSummary['active_machines']; ?> active and an average water level of <?php echo number_format($machineSummary['avg_water_level'], 2); ?> liters.</p>
+                        <p>This report covers <?php echo $machineSummary['total_machines']; ?> machines, with <?php echo $machineSummary['active_machines']; ?> active and an average water level of <?php echo number_format($machineSummary['avg_water_level'] / 1000, 2); ?> liters.</p>
                     <?php else: ?>
                         <p>The chart illustrates the status of <?php echo $machineSummary['total_machines']; ?> machines, showing <?php echo $machineSummary['active_machines']; ?> active units and an average water level of <?php echo number_format($machineSummary['avg_water_level'], 2); ?> liters.</p>
                     <?php endif; ?>
@@ -817,7 +817,7 @@ function generateCSVReport($title, $columns, $data, $machineFilter, $timeFilter,
                 </div>
                 <div class="report-summary">
                     <?php if ($currentVisualType === 'table'): ?>
-                        <p>This report summarizes <?php echo $salesSummary['total_transactions']; ?> transactions, generating PHP <?php echo number_format($salesSummary['total_sales'], 2); ?> in sales, with peak activity on <?php echo $salesSummary['max_sales_date'] ? date('M j, Y', strtotime($salesSummary['max_sales_date'])) : 'N/A'; ?>.</p>
+                        <p>This report summarizes <?php echo $salesSummary['total_transactions']; ?> transactions, generating PHP <?php echo number_format($salesSummary['total_sales'], 2); ?> in sales, with <?php echo number_format($waterSummary['total_water'] / 1000, 2); ?> liters dispensed and peak activity on <?php echo $salesSummary['max_sales_date'] ? date('M j, Y', strtotime($salesSummary['max_sales_date'])) : 'N/A'; ?>.</p>
                     <?php else: ?>
                         <p>The chart highlights sales trends, with <?php echo $salesSummary['total_transactions']; ?> transactions and PHP <?php echo number_format($salesSummary['total_sales'], 2); ?> in revenue, peaking on <?php echo $salesSummary['max_sales_date'] ? date('M j, Y', strtotime($salesSummary['max_sales_date'])) : 'N/A'; ?>.</p>
                     <?php endif; ?>
@@ -839,7 +839,7 @@ function generateCSVReport($title, $columns, $data, $machineFilter, $timeFilter,
                                 <td><?php echo date('M j, Y', strtotime($day['transaction_date'])); ?></td>
                                 <td><?php echo number_format($day['total_sales'], 2); ?></td>
                                 <td><?php echo $day['transaction_count']; ?></td>
-                                <td><?php echo $day['total_water_dispensed']; ?></td>
+                                <td><?php echo number_format($day['total_water_dispensed'] / 1000, 2); ?></td>
                             </tr>
                             <?php endforeach; ?>
                         </tbody>
@@ -860,7 +860,7 @@ function generateCSVReport($title, $columns, $data, $machineFilter, $timeFilter,
                 </div>
                 <div class="report-summary">
                     <?php if ($currentVisualType === 'table'): ?>
-                        <p>This report shows <?php echo number_format($waterSummary['total_water'], 2); ?> liters dispensed, generating PHP <?php echo number_format($waterSummary['total_income'], 2); ?> in income, with <?php echo htmlspecialchars($waterSummary['top_machine'] ?? 'N/A'); ?> as the top-performing machine.</p>
+                        <p>This report shows <?php echo number_format($waterSummary['total_water'] / 1000, 2); ?> liters dispensed, generating PHP <?php echo number_format($waterSummary['total_income'], 2); ?> in income, with <?php echo htmlspecialchars($waterSummary['top_machine'] ?? 'N/A'); ?> as the top-performing machine.</p>
                     <?php else: ?>
                         <p>The chart displays water consumption, with <?php echo number_format($waterSummary['total_water'], 2); ?> liters dispensed and PHP <?php echo number_format($waterSummary['total_income'], 2); ?> in revenue, led by <?php echo htmlspecialchars($waterSummary['top_machine'] ?? 'N/A'); ?>.</p>
                     <?php endif; ?>
@@ -884,7 +884,7 @@ function generateCSVReport($title, $columns, $data, $machineFilter, $timeFilter,
                                 <td><?php echo $machine['dispenser_id']; ?></td>
                                 <td><?php echo htmlspecialchars($machine['machine_name']); ?></td>
                                 <td><?php echo htmlspecialchars($machine['location_name'] ?? 'N/A'); ?></td>
-                                <td><?php echo $machine['total_water_dispensed'] ?? 0; ?></td>
+                                <td><?php echo number_format(($machine['total_water_dispensed'] ?? 0) / 1000, 2); ?></td>
                                 <td><?php echo $machine['transaction_count'] ?? 0; ?></td>
                                 <td><?php echo number_format($machine['total_income'] ?? 0, 2); ?></td>
                             </tr>
@@ -1070,7 +1070,7 @@ document.addEventListener('DOMContentLoaded', function() {
                 datasets = [
                     {
                         label: 'Water Level (L)',
-                        data: chartData.map(item => item.water_level),
+                        data: chartData.map(item => item.water_level / 1000),
                         backgroundColor: visualType === 'pie' ? chartData.map((_, i) => `hsl(${i * 360 / chartData.length}, 70%, 50%)`) : 'rgba(54, 162, 235, 0.5)',
                         borderColor: 'rgba(54, 162, 235, 1)',
                         borderWidth: chartType === 'pie' ? 0 : 1,
@@ -1078,7 +1078,7 @@ document.addEventListener('DOMContentLoaded', function() {
                     },
                     {
                         label: 'Capacity (L)',
-                        data: chartData.map(item => item.Capacity),
+                        data: chartData.map(item => item.Capacity / 1000),
                         backgroundColor: visualType === 'pie' ? chartData.map((_, i) => `hsl(${(i * 360 / chartData.length) + 120}, 70%, 50%)`) : 'rgba(255, 206, 86, 0.5)',
                         borderColor: 'rgba(255, 206, 86, 1)',
                         borderWidth: chartType === 'pie' ? 0 : 1,
@@ -1254,7 +1254,7 @@ document.addEventListener('DOMContentLoaded', function() {
                 datasets = [
                     {
                         label: 'Water Dispensed (L)',
-                        data: chartData.map(item => item.total_water_dispensed || 0),
+                        data: chartData.map(item => (item.total_water_dispensed || 0) / 1000),
                         backgroundColor: visualType === 'pie' ? chartData.map((_, i) => `hsl(${i * 360 / chartData.length}, 70%, 50%)`) : 'rgba(153, 102, 255, 0.5)',
                         borderColor: 'rgba(153, 102, 255, 1)',
                         borderWidth: chartType === 'pie' ? 0 : 1,

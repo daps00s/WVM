@@ -493,7 +493,7 @@ $dispensers = $stmt->fetchAll(PDO::FETCH_ASSOC);
                         <td><?php echo htmlspecialchars($transaction['DateAndTime']); ?></td>
                         <td><?php echo htmlspecialchars($transaction['coin_type']); ?></td>
                         <td class="text-right"><?php echo number_format($transaction['coin_value'], 2); ?></td>
-                        <td><?php echo number_format($transaction['amount_dispensed'], 2); ?> L</td>
+                        <td><?php echo number_format($transaction['amount_dispensed'], 2); ?> ml</td>
                         <td><?php echo htmlspecialchars($transaction['water_type']); ?></td>
                         <td><?php echo htmlspecialchars($transaction['Description']); ?></td>
                     </tr>
