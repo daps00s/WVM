@@ -940,12 +940,110 @@ function initTopMachinesChart() {
     }
 }
 
+// Global alert system for locations page
+let recurringAlertInterval = null;
+
+function initializeRecurringAlerts() {
+    // Check if recurring alerts should be active
+    fetch('api/check_alert_status.php')
+        .then(response => response.json())
+        .then(data => {
+            if (data.recurring_alerts_active) {
+                startRecurringAlert();
+            }
+        })
+        .catch(error => console.error('Error checking alert status:', error));
+}
+
+function startRecurringAlert() {
+    // Clear any existing interval first
+    if (recurringAlertInterval) {
+        clearInterval(recurringAlertInterval);
+    }
+    
+    // Show first alert immediately
+    showStickySuccessAlert();
+    
+    // Then show every 10 seconds
+    recurringAlertInterval = setInterval(showStickySuccessAlert, 10000);
+}
+
+function showStickySuccessAlert() {
+    // Remove any existing sticky alerts first
+    const existingAlerts = document.querySelectorAll('.sticky-alert-success');
+    existingAlerts.forEach(alert => {
+        removeStickyAlert(alert);
+    });
+
+    const stickyAlert = document.createElement('div');
+    stickyAlert.className = 'sticky-alert-success';
+    stickyAlert.innerHTML = `
+        <div class="alert-icon">
+            <i class="fas fa-check-circle"></i>
+        </div>
+        <div class="alert-content">
+            <div class="alert-title">Alert Acknowledged</div>
+            <div class="alert-message">Low water level alert has been acknowledged and will be monitored</div>
+        </div>
+        <button class="close-alert" aria-label="Close alert">
+            <i class="fas fa-times"></i>
+        </button>
+    `;
+    
+    document.body.appendChild(stickyAlert);
+    
+    // Auto-remove after 8 seconds
+    const autoRemove = setTimeout(() => {
+        removeStickyAlert(stickyAlert);
+    }, 8000);
+    
+    // Close button event
+    const closeBtn = stickyAlert.querySelector('.close-alert');
+    closeBtn.addEventListener('click', function() {
+        clearTimeout(autoRemove);
+        removeStickyAlert(stickyAlert);
+    });
+}
+
+function removeStickyAlert(alertElement) {
+    alertElement.style.animation = 'fadeOutUp 0.5s forwards';
+    setTimeout(() => {
+        if (alertElement.parentNode) {
+            alertElement.parentNode.removeChild(alertElement);
+        }
+    }, 500);
+}
+
+// Stop recurring alerts function
+function stopRecurringAlerts() {
+    if (recurringAlertInterval) {
+        clearInterval(recurringAlertInterval);
+        recurringAlertInterval = null;
+    }
+    
+    // Remove all existing alerts
+    const existingAlerts = document.querySelectorAll('.sticky-alert-success');
+    existingAlerts.forEach(alert => {
+        removeStickyAlert(alert);
+    });
+    
+    // Update server status
+    fetch('api/stop_recurring_alerts.php', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' }
+    }).catch(error => console.error('Error stopping alerts:', error));
+}
+
+// Add global function to stop alerts
+window.stopRecurringAlerts = stopRecurringAlerts;
+
 // Initialize page
 document.addEventListener('DOMContentLoaded', function() {
     initMap();
     initTopLocationsChart();
     initTopMachinesChart();
     filterAndPaginate();
+    initializeRecurringAlerts(); // Add this line
     
     document.getElementById('toggleHeatmap').addEventListener('change', toggleMapLayers);
     document.getElementById('toggleMarkers').addEventListener('change', toggleMapLayers);
@@ -992,6 +1090,26 @@ document.addEventListener('DOMContentLoaded', function() {
             window.location.href = window.location.pathname + '?period=' + value;
         }
     });
+
+    // Check for new alerts every 30 seconds
+setInterval(function() {
+    fetch('api/check_alerts.php')
+        .then(response => response.json())
+        .then(data => {
+            if (data.alerts_count > 0) {
+                // Check if modal should be shown
+                fetch('api/check_alert_status.php')
+                    .then(response => response.json())
+                    .then(statusData => {
+                        if (!statusData.low_water_modal_shown) {
+                            // Reload to show modal if not already shown
+                            window.location.reload();
+                        }
+                    });
+            }
+        })
+        .catch(error => console.error('Error checking alerts:', error));
+}, 30000);
 
     document.getElementById('applyCustomDates').addEventListener('click', function() {
         const start = document.getElementById('modal_start_date').value;

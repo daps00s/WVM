@@ -23,6 +23,85 @@ $transaction_page_url = ($current_page === 'accounting_and_calibration.php') ? '
     <title><?php echo htmlspecialchars($pageTitle); ?> - Water Vending Admin</title>
     <link rel="stylesheet" href="assets/css/navigations.css">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css">
+    <style>
+    .sticky-alert-success {
+        position: fixed;
+        top: 20px;
+        right: 20px;
+        background: linear-gradient(135deg, #4CAF50, #45a049);
+        color: white;
+        padding: 15px 20px;
+        border-radius: 8px;
+        box-shadow: 0 4px 15px rgba(0,0,0,0.2);
+        z-index: 10000;
+        display: flex;
+        align-items: center;
+        gap: 10px;
+        animation: slideInRight 0.5s ease-out;
+        max-width: 300px;
+        border-left: 4px solid #2E7D32;
+    }
+
+    .sticky-alert-success .alert-icon {
+        font-size: 1.5em;
+    }
+
+    .sticky-alert-success .alert-content {
+        flex: 1;
+    }
+
+    .sticky-alert-success .alert-title {
+        font-weight: bold;
+        margin-bottom: 5px;
+    }
+
+    .sticky-alert-success .alert-message {
+        font-size: 0.9em;
+        opacity: 0.9;
+    }
+
+    .sticky-alert-success .close-alert {
+        background: none;
+        border: none;
+        color: white;
+        font-size: 1.2em;
+        cursor: pointer;
+        padding: 0;
+        width: 25px;
+        height: 25px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        border-radius: 50%;
+        transition: background-color 0.3s;
+    }
+
+    .sticky-alert-success .close-alert:hover {
+        background-color: rgba(255,255,255,0.2);
+    }
+
+    @keyframes slideInRight {
+        from {
+            transform: translateX(100%);
+            opacity: 0;
+        }
+        to {
+            transform: translateX(0);
+            opacity: 1;
+        }
+    }
+
+    @keyframes fadeOutUp {
+        from {
+            transform: translateY(0);
+            opacity: 1;
+        }
+        to {
+            transform: translateY(-20px);
+            opacity: 0;
+        }
+    }
+    </style>
 </head>
 <body>
     <div class="dashboard-container">
@@ -185,6 +264,129 @@ document.addEventListener('DOMContentLoaded', function() {
     });
 
 });
+
+// Global alert system for all pages
+document.addEventListener('DOMContentLoaded', function() {
+    let recurringAlertInterval = null;
+
+    function initializeRecurringAlerts() {
+        // Check if recurring alerts should be active
+        fetch('api/check_alert_status.php')
+            .then(response => response.json())
+            .then(data => {
+                if (data.recurring_alerts_active) {
+                    startRecurringAlert();
+                }
+            })
+            .catch(error => console.error('Error checking alert status:', error));
+    }
+
+    function startRecurringAlert() {
+        // Clear any existing interval first
+        if (recurringAlertInterval) {
+            clearInterval(recurringAlertInterval);
+        }
+        
+        // Show first alert immediately
+        showStickySuccessAlert();
+        
+        // Then show every 10 seconds
+        recurringAlertInterval = setInterval(showStickySuccessAlert, 10000);
+    }
+
+    function showStickySuccessAlert() {
+        // Remove any existing sticky alerts first
+        const existingAlerts = document.querySelectorAll('.sticky-alert-success');
+        existingAlerts.forEach(alert => {
+            removeStickyAlert(alert);
+        });
+
+        const stickyAlert = document.createElement('div');
+        stickyAlert.className = 'sticky-alert-success';
+        stickyAlert.innerHTML = `
+            <div class="alert-icon">
+                <i class="fas fa-check-circle"></i>
+            </div>
+            <div class="alert-content">
+                <div class="alert-title">Alert Acknowledged</div>
+                <div class="alert-message">Low water level alert has been acknowledged and will be monitored</div>
+            </div>
+            <button class="close-alert" aria-label="Close alert">
+                <i class="fas fa-times"></i>
+            </button>
+        `;
+        
+        document.body.appendChild(stickyAlert);
+        
+        // Auto-remove after 8 seconds
+        const autoRemove = setTimeout(() => {
+            removeStickyAlert(stickyAlert);
+        }, 8000);
+        
+        // Close button event
+        const closeBtn = stickyAlert.querySelector('.close-alert');
+        closeBtn.addEventListener('click', function() {
+            clearTimeout(autoRemove);
+            removeStickyAlert(stickyAlert);
+        });
+    }
+    
+    function removeStickyAlert(alertElement) {
+        alertElement.style.animation = 'fadeOutUp 0.5s forwards';
+        setTimeout(() => {
+            if (alertElement.parentNode) {
+                alertElement.parentNode.removeChild(alertElement);
+            }
+        }, 500);
+    }
+
+    // Stop recurring alerts function
+    function stopRecurringAlerts() {
+        if (recurringAlertInterval) {
+            clearInterval(recurringAlertInterval);
+            recurringAlertInterval = null;
+        }
+        
+        // Remove all existing alerts
+        const existingAlerts = document.querySelectorAll('.sticky-alert-success');
+        existingAlerts.forEach(alert => {
+            removeStickyAlert(alert);
+        });
+        
+        // Update server status
+        fetch('api/stop_recurring_alerts.php', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' }
+        }).catch(error => console.error('Error stopping alerts:', error));
+    }
+
+    // Add global function to stop alerts (can be called from other pages)
+    window.stopRecurringAlerts = stopRecurringAlerts;
+
+    // Initialize on page load
+    initializeRecurringAlerts();
+
+    // Check for new alerts every 30 seconds
+    setInterval(function() {
+        fetch('api/check_alerts.php')
+            .then(response => response.json())
+            .then(data => {
+                if (data.alerts_count > 0) {
+                    // Check if modal should be shown
+                    fetch('api/check_alert_status.php')
+                        .then(response => response.json())
+                        .then(statusData => {
+                            if (!statusData.low_water_modal_shown) {
+                                // Reload to show modal if not already shown
+                                window.location.reload();
+                            }
+                        });
+                }
+            })
+            .catch(error => console.error('Error checking alerts:', error));
+    }, 30000);
+});
+
 </script>
 </body>
 </html>

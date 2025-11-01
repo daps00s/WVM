@@ -362,6 +362,29 @@
     border-color: #2980b9;
 }
 
+.btn-secondary {
+    color: #fff;
+    background-color: #6c757d;
+    border-color: #6c757d;
+    padding: 10px 16px;
+    font-size: 14px;
+    border-radius: 4px;
+    cursor: pointer;
+    transition: background-color 0.2s;
+    border: none;
+    width: 100%;
+    min-height: 44px;
+    text-align: center;
+    display: block;
+    margin-bottom: 10px;
+}
+
+.btn-secondary:hover {
+    background-color: #5a6268;
+    border-color: #545b62;
+}
+
+/* Floating Modal Styles */
 .modal {
     display: none;
     position: fixed;
@@ -376,6 +399,40 @@
     box-sizing: border-box;
 }
 
+.modal.floating-alert-modal {
+    display: block;
+    animation: fadeIn 0.3s ease-out;
+}
+
+.floating-modal-content {
+    background-color: white;
+    margin: 5% auto;
+    padding: 20px;
+    border-radius: 12px;
+    width: 95%;
+    max-width: 500px;
+    box-shadow: 0 10px 30px rgba(0,0,0,0.3);
+    position: relative;
+    border: 3px solid #dc3545;
+    animation: slideDown 0.4s ease-out;
+}
+
+@keyframes fadeIn {
+    from { opacity: 0; }
+    to { opacity: 1; }
+}
+
+@keyframes slideDown {
+    from {
+        transform: translateY(-50px);
+        opacity: 0;
+    }
+    to {
+        transform: translateY(0);
+        opacity: 1;
+    }
+}
+
 .modal-content {
     background-color: white;
     margin: 5% auto;
@@ -387,91 +444,6 @@
     position: relative;
 }
 
-/* Static Alert Modal Fix */
-.modal.alert-modal {
-    position: static;
-    display: block !important;
-    background-color: transparent;
-    padding: 0;
-    margin: 20px auto;
-    height: auto;
-    width: 100%;
-    max-width: 600px;
-}
-
-.modal.alert-modal .modal-content {
-    margin: 0;
-    max-width: 100%;
-    width: 100%;
-    animation: slideDown 0.5s ease-out;
-    border: 2px solid #dc3545;
-    background: #fff;
-}
-
-/* Ensure alert scroll container works */
-.alert-scroll-container {
-    max-height: 300px;
-    overflow-y: auto;
-    border: 1px solid #e0e0e0;
-    border-radius: 8px;
-    padding: 15px;
-    background: #f9f9f9;
-    margin: 10px 0;
-}
-
-.alert-scroll-container ul {
-    margin: 0;
-    padding: 0;
-    list-style: none;
-}
-
-.alert-scroll-container li {
-    padding: 15px;
-    margin-bottom: 10px;
-    background: white;
-    border-radius: 8px;
-    border-left: 4px solid #dc3545;
-    box-shadow: 0 2px 4px rgba(0,0,0,0.1);
-}
-
-.alert-scroll-container li:last-child {
-    margin-bottom: 0;
-}
-
-.alert-scroll-container strong {
-    color: #dc3545;
-    font-size: 1.1em;
-}
-
-/* Scrollbar Styling */
-.alert-scroll-container::-webkit-scrollbar {
-    width: 8px;
-}
-
-.alert-scroll-container::-webkit-scrollbar-track {
-    background: #f1f1f1;
-    border-radius: 4px;
-}
-
-.alert-scroll-container::-webkit-scrollbar-thumb {
-    background: #c1c1c1;
-    border-radius: 4px;
-}
-
-.alert-scroll-container::-webkit-scrollbar-thumb:hover {
-    background: #a8a8a8;
-}
-
-@keyframes slideDown {
-    from {
-        transform: translateY(-20px);
-        opacity: 0;
-    }
-    to {
-        transform: translateY(0);
-        opacity: 1;
-    }
-}
 .close-modal {
     position: absolute;
     right: 15px;
@@ -484,10 +456,13 @@
     display: flex;
     align-items: center;
     justify-content: center;
+    z-index: 1001;
 }
 
 .close-modal:hover {
     color: #e74c3c;
+    background-color: #f8f9fa;
+    border-radius: 50%;
 }
 
 .alert-list {
@@ -602,6 +577,25 @@
     to { opacity: 0; }
 }
 
+.modal-actions {
+    margin-top: 20px;
+    padding-top: 15px;
+    border-top: 1px solid #eee;
+}
+
+.modal-actions h3 {
+    margin: 0 0 15px 0;
+    color: #2c3e50;
+    font-size: 16px;
+}
+
+.action-buttons {
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+    margin-top: 15px;
+}
+
 /* Tablet Styles */
 @media (min-width: 768px) {
     .content-area {
@@ -639,11 +633,25 @@
         width: 85%;
     }
     
+    .floating-modal-content {
+        margin: 10% auto;
+        max-width: 500px;
+    }
+    
     .notification-toast {
         right: 20px;
         left: auto;
         max-width: 300px;
         text-align: left;
+    }
+    
+    .action-buttons {
+        flex-direction: row;
+    }
+    
+    .action-buttons .btn-secondary,
+    .action-buttons .acknowledge-btn {
+        flex: 1;
     }
 }
 
@@ -661,6 +669,10 @@
     .modal-content {
         width: 80%;
         max-width: 400px;
+    }
+    
+    .floating-modal-content {
+        max-width: 500px;
     }
 }
 

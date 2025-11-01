@@ -2,6 +2,7 @@
 //dashboard.php
 $pageTitle = 'Dashboard';
 require_once 'includes/header.php';
+
 // Initialize session flag for low water modal
 if (!isset($_SESSION['low_water_modal_shown'])) {
     $_SESSION['low_water_modal_shown'] = false;
@@ -31,8 +32,91 @@ $transactions = $pdo->query("SELECT t.transaction_id, t.amount_dispensed, t.Date
                             FROM transaction t
                             JOIN dispenser d ON t.dispenser_id = d.dispenser_id
                             ORDER BY t.DateAndTime DESC LIMIT 10")->fetchAll();
+
+// Store alert count in session for cross-page access
+$_SESSION['current_alert_count'] = count($alerts);
 ?>
 <link rel="stylesheet" href="assets/css/maindashboard.css">
+<style>
+.sticky-alert-success {
+    position: fixed;
+    top: 20px;
+    right: 20px;
+    background: linear-gradient(135deg, #4CAF50, #45a049);
+    color: white;
+    padding: 15px 20px;
+    border-radius: 8px;
+    box-shadow: 0 4px 15px rgba(0,0,0,0.2);
+    z-index: 10000;
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    animation: slideInRight 0.5s ease-out;
+    max-width: 300px;
+    border-left: 4px solid #2E7D32;
+}
+
+.sticky-alert-success .alert-icon {
+    font-size: 1.5em;
+}
+
+.sticky-alert-success .alert-content {
+    flex: 1;
+}
+
+.sticky-alert-success .alert-title {
+    font-weight: bold;
+    margin-bottom: 5px;
+}
+
+.sticky-alert-success .alert-message {
+    font-size: 0.9em;
+    opacity: 0.9;
+}
+
+.sticky-alert-success .close-alert {
+    background: none;
+    border: none;
+    color: white;
+    font-size: 1.2em;
+    cursor: pointer;
+    padding: 0;
+    width: 25px;
+    height: 25px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    border-radius: 50%;
+    transition: background-color 0.3s;
+}
+
+.sticky-alert-success .close-alert:hover {
+    background-color: rgba(255,255,255,0.2);
+}
+
+@keyframes slideInRight {
+    from {
+        transform: translateX(100%);
+        opacity: 0;
+    }
+    to {
+        transform: translateX(0);
+        opacity: 1;
+    }
+}
+
+@keyframes fadeOutUp {
+    from {
+        transform: translateY(0);
+        opacity: 1;
+    }
+    to {
+        transform: translateY(-20px);
+        opacity: 0;
+    }
+}
+</style>
+
 <div class="content-area">
     <div class="content-wrapper">
         <div class="content-header">
@@ -110,11 +194,10 @@ $transactions = $pdo->query("SELECT t.transaction_id, t.amount_dispensed, t.Date
     </div>
 </div>
 
-<!-- Low Water Level Alert Section (Static) -->
-<?php if (!empty($alerts)): ?>
-<div class="modal alert-modal" id="lowWaterModal">
-    <div class="modal-content">
-        <!-- No close button for static alert -->
+<!-- Low Water Level Alert Modal (Floating Popup) -->
+<?php if (!empty($alerts) && !$_SESSION['low_water_modal_shown']): ?>
+<div class="modal floating-alert-modal" id="lowWaterModal" style="display: block;">
+    <div class="modal-content floating-modal-content">
         <h2>🚨 Low Water Level Alert</h2>
         <div class="alert-list">
             <p><strong>Urgent Attention Required!</strong> The following machines have low water levels:</p>
@@ -191,6 +274,7 @@ $transactions = $pdo->query("SELECT t.transaction_id, t.amount_dispensed, t.Date
                         </div>
                     </div>
                 <?php endforeach; ?>
+                </div>
             </div>
         </div>
     </div>
@@ -208,7 +292,7 @@ document.addEventListener('DOMContentLoaded', function() {
     const alertSound = document.getElementById('alertSound');
     let soundInterval;
     
-    // Auto start sound if alerts exist
+    // Auto start sound if alerts exist and modal is shown
     <?php if (!empty($alerts) && !$_SESSION['low_water_modal_shown']): ?>
     setTimeout(() => {
         startAlertSound();
@@ -256,12 +340,14 @@ document.addEventListener('DOMContentLoaded', function() {
     const transactionsModal = document.getElementById('recentTransactionsModal');
     const showTransactions = document.querySelector('.stat-card.transactions');
 
-    showTransactions.addEventListener('click', function(e) {
-        e.preventDefault();
-        transactionsModal.style.display = 'block';
-    });
+    if (showTransactions) {
+        showTransactions.addEventListener('click', function(e) {
+            e.preventDefault();
+            transactionsModal.style.display = 'block';
+        });
+    }
 
-    // Close modals (only for non-alert modals or when close button is present)
+    // Close modals
     document.querySelectorAll('.close-modal').forEach(button => {
         button.addEventListener('click', function() {
             const modal = this.closest('.modal');
@@ -273,48 +359,115 @@ document.addEventListener('DOMContentLoaded', function() {
         });
     });
 
-    // Acknowledge button for initial alert modal (no close button)
+    // Acknowledge button for low water modal
     const acknowledgeBtn = document.querySelector('.acknowledge-btn');
     if (acknowledgeBtn) {
         acknowledgeBtn.addEventListener('click', function() {
-            lowWaterModal.style.display = 'none';
-            stopAlertSound();
-            setModalFlag();
+            const lowWaterModal = document.getElementById('lowWaterModal');
+            if (lowWaterModal) {
+                lowWaterModal.style.display = 'none';
+                stopAlertSound();
+                setModalFlag();
+                showStickySuccessAlert();
+                // Start the recurring alert
+                startRecurringAlert();
+            }
         });
     }
 
-    // Okay button for regular low water modal
-    const okayModal = document.querySelector('.okay-modal');
-    if (okayModal) {
-        okayModal.addEventListener('click', function() {
-            lowWaterModal.style.display = 'none';
-            stopAlertSound();
-            setModalFlag();
+    // Function to show sticky success alert
+    function showStickySuccessAlert() {
+        // Remove any existing sticky alerts first
+        const existingAlerts = document.querySelectorAll('.sticky-alert-success');
+        existingAlerts.forEach(alert => {
+            removeStickyAlert(alert);
+        });
+
+        const stickyAlert = document.createElement('div');
+        stickyAlert.className = 'sticky-alert-success';
+        stickyAlert.innerHTML = `
+            <div class="alert-icon">
+                <i class="fas fa-check-circle"></i>
+            </div>
+            <div class="alert-content">
+                <div class="alert-title">Alert Acknowledged</div>
+                <div class="alert-message">Low water level alert has been acknowledged and will be monitored</div>
+            </div>
+            <button class="close-alert" aria-label="Close alert">
+                <i class="fas fa-times"></i>
+            </button>
+        `;
+        
+        document.body.appendChild(stickyAlert);
+        
+        // Auto-remove after 8 seconds
+        const autoRemove = setTimeout(() => {
+            removeStickyAlert(stickyAlert);
+        }, 8000);
+        
+        // Close button event
+        const closeBtn = stickyAlert.querySelector('.close-alert');
+        closeBtn.addEventListener('click', function() {
+            clearTimeout(autoRemove);
+            removeStickyAlert(stickyAlert);
         });
     }
+    
+    // Function to remove sticky alert with animation
+    function removeStickyAlert(alertElement) {
+        alertElement.style.animation = 'fadeOutUp 0.5s forwards';
+        setTimeout(() => {
+            if (alertElement.parentNode) {
+                alertElement.parentNode.removeChild(alertElement);
+            }
+        }, 500);
+    }
 
-    // Close modals when clicking outside (only if close button exists)
-    window.addEventListener('click', function(event) {
-        if (event.target.className === 'modal') {
-            const modal = event.target;
-            // Only close if it's not the initial alert modal or if it has close button
-            const hasCloseButton = modal.querySelector('.close-modal');
-            if (hasCloseButton || !modal.classList.contains('alert-modal')) {
-                modal.style.display = 'none';
-                if (modal.id === 'lowWaterModal') {
-                    stopAlertSound();
-                    setModalFlag();
+    // Function to start recurring alert every 10 seconds
+    function startRecurringAlert() {
+        // Show first alert immediately
+        showStickySuccessAlert();
+        
+        // Then show every 10 seconds
+        setInterval(showStickySuccessAlert, 10000);
+    }
+
+    // Check if we should start recurring alerts (if modal was previously acknowledged)
+    function checkRecurringAlerts() {
+        fetch('api/check_alert_status.php')
+            .then(response => response.json())
+            .then(data => {
+                if (data.recurring_alerts_active) {
+                    startRecurringAlert();
                 }
+            })
+            .catch(error => console.error('Error checking alert status:', error));
+    }
+
+    // Initialize recurring alerts check
+    checkRecurringAlerts();
+
+    // Close modals when clicking outside
+    window.addEventListener('click', function(event) {
+        if (event.target.classList.contains('modal')) {
+            const modal = event.target;
+            modal.style.display = 'none';
+            if (modal.id === 'lowWaterModal') {
+                stopAlertSound();
+                setModalFlag();
             }
         }
     });
 
     // Function to set modal flag
     function setModalFlag() {
-        fetch('set_modal_flag.php', {
+        fetch('api/set_modal_flag.php', {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ low_water_modal_shown: true })
+            body: JSON.stringify({ 
+                low_water_modal_shown: true,
+                start_recurring_alerts: true 
+            })
         }).catch(error => {
             console.error('Error setting modal flag:', error);
         });
@@ -368,26 +521,22 @@ document.addEventListener('DOMContentLoaded', function() {
         }, 2500);
     }
 
-    // Optional: Play sound when water level stat card is clicked (for testing)
-    const waterLevelCard = document.querySelector('.stat-card.water-level');
-    if (waterLevelCard && <?php echo !empty($alerts) ? 'true' : 'false'; ?>) {
-        waterLevelCard.addEventListener('click', function(e) {
-            e.preventDefault();
-            lowWaterModal.style.display = 'block';
-            startAlertSound();
-        });
-    }
-
     // Auto-check for alerts and show modal if new alerts appear
     function checkForNewAlerts() {
-        fetch('check_alerts.php')
+        fetch('api/check_alerts.php')
             .then(response => response.json())
             .then(data => {
-                if (data.hasAlerts && !lowWaterModal.style.display || lowWaterModal.style.display === 'none') {
-                    lowWaterModal.style.display = 'block';
-                    startAlertSound();
-                } else if (!data.hasAlerts) {
-                    stopAlertSound();
+                const lowWaterModal = document.getElementById('lowWaterModal');
+                // Check if there are alerts and no modal is currently shown
+                if (data.alerts_count > 0 && (!lowWaterModal || lowWaterModal.style.display === 'none')) {
+                    // Check if we haven't already shown the modal in this session
+                    fetch('api/check_alert_status.php')
+                        .then(response => response.json())
+                        .then(statusData => {
+                            if (!statusData.low_water_modal_shown) {
+                                window.location.reload();
+                            }
+                        });
                 }
             })
             .catch(error => console.error('Error checking alerts:', error));

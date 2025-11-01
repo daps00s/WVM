@@ -230,109 +230,716 @@ if ($frequency === 'daily') {
     }
 }
 
+// Calculate backup stats
+$total_backups = count($backupFiles);
+$auto_backups = 0;
+$manual_backups = 0;
+$total_size = 0;
+
+foreach ($backupFiles as $file) {
+    if (strpos(basename($file), 'auto_backup_') === 0) {
+        $auto_backups++;
+    } else {
+        $manual_backups++;
+    }
+    $total_size += filesize($file);
+}
+
+$total_size_mb = round($total_size / (1024 * 1024), 2);
+
 require_once 'includes/header.php';
 ?>
 
-<!DOCTYPE html>
-<html lang="en">
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title><?php echo $pageTitle; ?></title>
-    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
-    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css">
-    <link rel="stylesheet" href="assets/css/backup.css">
-</head>
-<body>
+<link rel="stylesheet" href="assets/css/machines.css">
+<style>
+/* Stat Cards Styles */
+.stats-grid {
+    display: grid;
+    grid-template-columns: repeat(4, 1fr);
+    gap: 20px;
+    margin-bottom: 30px;
+}
+
+.stat-card {
+    background: white;
+    border-radius: 12px;
+    padding: 24px;
+    box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+    border: 1px solid #e2e8f0;
+    transition: all 0.3s ease;
+    display: flex;
+    align-items: center;
+    gap: 16px;
+}
+
+.stat-card:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 8px 15px rgba(0, 0, 0, 0.15);
+}
+
+.stat-icon {
+    width: 60px;
+    height: 60px;
+    border-radius: 12px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 24px;
+    color: white;
+}
+
+.stat-content {
+    flex: 1;
+}
+
+.stat-title {
+    font-size: 14px;
+    font-weight: 600;
+    color: #64748b;
+    margin-bottom: 8px;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+}
+
+.stat-value {
+    font-size: 28px;
+    font-weight: 700;
+    color: #1e293b;
+    margin-bottom: 8px;
+    line-height: 1;
+}
+
+.stat-change {
+    font-size: 12px;
+    font-weight: 600;
+    display: flex;
+    align-items: center;
+    gap: 4px;
+}
+
+.stat-change.success {
+    color: #059669;
+}
+
+.stat-change.warning {
+    color: #f59e0b;
+}
+
+.stat-change.danger {
+    color: #ef4444;
+}
+
+/* Stat card colors */
+.stat-card:nth-child(1) .stat-icon {
+    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+}
+
+.stat-card:nth-child(2) .stat-icon {
+    background: linear-gradient(135deg, #4facfe 0%, #00f2fe 100%);
+}
+
+.stat-card:nth-child(3) .stat-icon {
+    background: linear-gradient(135deg, #f093fb 0%, #f5576c 100%);
+}
+
+.stat-card:nth-child(4) .stat-icon {
+    background: linear-gradient(135deg, #43e97b 0%, #38f9d7 100%);
+}
+
+/* Backup Cards */
+.backup-cards {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+    gap: 20px;
+    margin: 20px 0;
+}
+
+.backup-card {
+    background: white;
+    border-radius: 12px;
+    padding: 24px;
+    box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+    border: 1px solid #e2e8f0;
+    transition: all 0.3s ease;
+}
+
+.backup-card:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 8px 15px rgba(0, 0, 0, 0.15);
+}
+
+.backup-card h3 {
+    font-size: 18px;
+    font-weight: 600;
+    color: #1e293b;
+    margin: 0 0 16px 0;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+}
+
+.backup-card p {
+    font-size: 14px;
+    color: #64748b;
+    margin: 8px 0;
+    line-height: 1.5;
+}
+
+.backup-card .btn {
+    width: 100%;
+    width: 200px;
+    margin-left:170px;
+    margin-top: 16px;
+}
+
+/* Control Panel */
+.control-panel {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    flex-wrap: wrap;
+}
+
+.period-select {
+    padding: 8px 12px;
+    border: 1px solid #e2e8f0;
+    border-radius: 6px;
+    font-size: 14px;
+    background-color: white;
+    min-width: 160px;
+}
+
+/* Table Styles */
+.table-container {
+    background: white;
+    border-radius: 12px;
+    box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+    overflow: hidden;
+    margin-top: 20px;
+}
+
+.data-table {
+    width: 100%;
+    border-collapse: collapse;
+}
+
+.data-table th, .data-table td {
+    padding: 16px;
+    text-align: left;
+    border-bottom: 1px solid #e2e8f0;
+}
+
+.data-table th {
+    background: #f8fafc;
+    font-weight: 600;
+    color: #1e293b;
+    font-size: 14px;
+}
+
+.data-table tr:hover {
+    background: #f8fafc;
+}
+
+.backup-type-auto {
+    color: #059669;
+    font-weight: 500;
+    font-size: 13px;
+}
+
+.backup-type-manual {
+    color: #3b82f6;
+    font-weight: 500;
+    font-size: 13px;
+}
+
+.btn-action {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 36px;
+    height: 36px;
+    border-radius: 6px;
+    margin-right: 6px;
+    transition: all 0.2s ease;
+    border: none;
+    cursor: pointer;
+    font-size: 14px;
+}
+
+.btn-action.download {
+    background: rgba(34, 197, 94, 0.1);
+    color: #059669;
+}
+
+.btn-action.download:hover {
+    background: #059669;
+    color: white;
+}
+
+.btn-action.delete {
+    background: rgba(239, 68, 68, 0.1);
+    color: #ef4444;
+}
+
+.btn-action.delete:hover {
+    background: #ef4444;
+    color: white;
+}
+
+/* Notification Toast */
+.notification-toast {
+    position: fixed;
+    top: 20px;
+    right: 20px;
+    padding: 16px 20px;
+    border-radius: 8px;
+    color: white;
+    font-weight: 500;
+    box-shadow: 0 4px 12px rgba(0,0,0,0.15);
+    z-index: 1100;
+    animation: slideIn 0.3s, fadeOut 0.5s 2.5s forwards;
+    max-width: 400px;
+}
+
+.notification-toast.success {
+    background: #059669;
+}
+
+.notification-toast.error {
+    background: #ef4444;
+}
+
+.notification-toast.warning {
+    background: #f59e0b;
+}
+
+/* Modal Styles */
+.modal {
+    display: none;
+    position: fixed;
+    z-index: 1000;
+    left: 0;
+    top: 0;
+    width: 100%;
+    height: 100%;
+    background-color: rgba(0,0,0,0.5);
+    overflow: auto;
+}
+
+.modal-content {
+    background-color: #fff;
+    margin: 10% auto;
+    padding: 0;
+    border-radius: 12px;
+    width: 90%;
+    max-width: 500px;
+    box-shadow: 0 10px 25px rgba(0,0,0,0.2);
+    animation: fadeIn 0.3s ease;
+}
+
+.modal-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 20px;
+    border-bottom: 1px solid #e2e8f0;
+}
+
+.modal-header h2 {
+    margin: 0;
+    font-size: 20px;
+    color: #1e293b;
+    font-weight: 600;
+}
+
+.close-modal {
+    font-size: 24px;
+    color: #64748b;
+    cursor: pointer;
+    transition: color 0.2s;
+}
+
+.close-modal:hover {
+    color: #1e293b;
+}
+
+.modal-body {
+    padding: 20px;
+}
+
+.modal-footer {
+    display: flex;
+    gap: 12px;
+    padding: 20px;
+    border-top: 1px solid #e2e8f0;
+    justify-content: flex-end;
+}
+
+.input-group {
+    margin-bottom: 20px;
+}
+
+.input-group label {
+    display: block;
+    margin-bottom: 8px;
+    font-weight: 500;
+    color: #1e293b;
+    font-size: 14px;
+}
+
+.input-group input {
+    width: 100%;
+    padding: 12px;
+    border: 1px solid #e2e8f0;
+    border-radius: 6px;
+    font-size: 14px;
+    transition: border-color 0.2s;
+    box-sizing: border-box;
+}
+
+.input-group input:focus {
+    outline: none;
+    border-color: #3b82f6;
+    box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.1);
+}
+
+/* Button Styles */
+.btn {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: 8px;
+    padding: 12px 20px;
+    border-radius: 6px;
+    font-size: 14px;
+    font-weight: 500;
+    cursor: pointer;
+    transition: all 0.2s ease;
+    border: none;
+    text-decoration: none;
+}
+
+.btn-primary {
+    background: #3b82f6;
+    color: white;
+}
+
+.btn-primary:hover {
+    background: #2563eb;
+    transform: translateY(-1px);
+}
+
+.btn-secondary {
+    background: #64748b;
+    color: white;
+}
+
+.btn-secondary:hover {
+    background: #475569;
+    transform: translateY(-1px);
+}
+
+.btn-danger {
+    background: #ef4444;
+    color: white;
+}
+
+.btn-danger:hover {
+    background: #dc2626;
+    transform: translateY(-1px);
+}
+
+/* Animations */
+@keyframes slideIn {
+    from {
+        transform: translateX(100%);
+        opacity: 0;
+    }
+    to {
+        transform: translateX(0);
+        opacity: 1;
+    }
+}
+
+@keyframes fadeOut {
+    from {
+        opacity: 1;
+    }
+    to {
+        opacity: 0;
+    }
+}
+
+@keyframes fadeIn {
+    from {
+        opacity: 0;
+        transform: translateY(-10px);
+    }
+    to {
+        opacity: 1;
+        transform: translateY(0);
+    }
+}
+
+/* Responsive Design */
+@media (max-width: 1200px) {
+    .stats-grid {
+        grid-template-columns: repeat(2, 1fr);
+    }
+}
+
+@media (max-width: 768px) {
+    .stats-grid {
+        grid-template-columns: 1fr;
+    }
+    
+    .backup-cards {
+        grid-template-columns: 1fr;
+    }
+    
+    .content-header {
+        flex-direction: column;
+        align-items: flex-start;
+        gap: 15px;
+    }
+    
+    .control-panel {
+        width: 100%;
+        justify-content: flex-start;
+    }
+    
+    .period-select {
+        width: 100%;
+    }
+    
+    .notification-toast {
+        right: 15px;
+        left: 15px;
+        max-width: none;
+    }
+    
+    .modal-content {
+        margin: 20% auto;
+        width: 95%;
+    }
+}
+
+@media (max-width: 576px) {
+    .content-wrapper {
+        padding: 0 15px;
+    }
+    
+    .stat-card {
+        padding: 20px;
+    }
+    
+    .stat-value {
+        font-size: 24px;
+    }
+    
+    .data-table {
+        font-size: 14px;
+    }
+    
+    .data-table th, .data-table td {
+        padding: 12px 8px;
+    }
+}
+
+/* Override to match forecast layout */
+.content-area {
+    padding: 30px 0 0 0 !important;
+    background-color: var(--light) !important;
+    width: 100% !important;
+    margin-left: 0 !important;
+}
+
+.content-wrapper {
+    padding: 0 30px !important;
+    max-width: 100% !important;
+    margin: 0 auto !important;
+    min-height: auto !important;
+    position: relative !important;
+}
+
+.content-header {
+    display: flex !important;
+    justify-content: space-between !important;
+    align-items: center !important;
+    margin-bottom: 30px !important;
+    flex-direction: row !important;
+    padding: 0 !important;
+}
+
+.content-title {
+    font-size: 24px !important;
+    color: var(--secondary) !important;
+    font-weight: 600 !important;
+    text-align: left !important;
+}
+
+.content-actions {
+    display: flex !important;
+    justify-content: flex-end !important;
+    width: auto !important;
+}
+</style>
+
 <div class="content-area">
     <div class="content-wrapper">
         <!-- Notification Toast -->
         <?php if ($notification): ?>
         <div class="notification-toast <?= explode('|', $notification)[0] ?>">
-            <span><?= explode('|', $notification)[1] ?></span>
-            <div class="notification-progress"></div>
+            <?= explode('|', $notification)[1] ?>
         </div>
         <?php endif; ?>
 
         <!-- Refresh Loading Modal -->
         <div id="refreshLoadingModal" class="modal" style="display: none;">
             <div class="modal-content">
-                <div class="loading-spinner"></div>
-                <p id="refreshLoadingMessage">Refreshing backup list...</p>
+                <div class="modal-body" style="text-align: center;">
+                    <div class="loading-spinner"></div>
+                    <p id="refreshLoadingMessage">Refreshing backup list...</p>
+                </div>
             </div>
         </div>
 
         <!-- Confirmation Modal -->
         <div id="confirmModal" class="modal" style="display: none;">
             <div class="modal-content">
-                <h3 id="modalTitle"></h3>
-                <p id="modalMessage"></p>
-                <div class="input-group" id="confirmInputGroup" style="display: none;">
-                    <label for="confirmInput">Type CONFIRM to verify:</label>
-                    <input type="text" id="confirmInput" class="form-control" placeholder="CONFIRM">
+                <div class="modal-header">
+                    <h2 id="modalTitle"></h2>
+                    <span class="close-modal">&times;</span>
                 </div>
-                <div class="modal-buttons">
+                <div class="modal-body">
+                    <p id="modalMessage"></p>
+                    <div class="input-group" id="confirmInputGroup" style="display: none;">
+                        <label for="confirmInput">Type CONFIRM to verify:</label>
+                        <input type="text" id="confirmInput" class="form-control" placeholder="CONFIRM">
+                    </div>
+                </div>
+                <div class="modal-footer">
                     <button id="modalConfirm" class="btn btn-primary">Confirm</button>
                     <button id="modalCancel" class="btn btn-secondary">Cancel</button>
                 </div>
             </div>
         </div>
 
-        <div class="content-header card">
-            <h3 class="content-title">Database Backup System</h3>
-            <span class="content-subtitle">Philippines - Tarlac Time (Asia/Manila)</span>
+        <!-- Header Section -->
+        <div class="content-header">
+            <h1 class="content-title">System Backup Management</h1>
+            <div class="content-actions">
+                <div class="control-panel">
+                    <span style="font-size: 14px; color: #64748b;">Philippines - Tarlac Time (Asia/Manila)</span>
+                </div>
+            </div>
+        </div>
+
+        <!-- Stats Grid -->
+        <div class="stats-grid">
+            <div class="stat-card">
+                <div class="stat-icon"><i class="fas fa-database"></i></div>
+                <div class="stat-content">
+                    <div class="stat-title">Total Backups</div>
+                    <div class="stat-value"><?= $total_backups ?></div>
+                    <div class="stat-change success">
+                        <i class="fas fa-archive"></i> All Time
+                    </div>
+                </div>
+            </div>
+            <div class="stat-card">
+                <div class="stat-icon"><i class="fas fa-robot"></i></div>
+                <div class="stat-content">
+                    <div class="stat-title">Automatic Backups</div>
+                    <div class="stat-value"><?= $auto_backups ?></div>
+                    <div class="stat-change success">
+                        <i class="fas fa-cog"></i> System Generated
+                    </div>
+                </div>
+            </div>
+            <div class="stat-card">
+                <div class="stat-icon"><i class="fas fa-user-cog"></i></div>
+                <div class="stat-content">
+                    <div class="stat-title">Manual Backups</div>
+                    <div class="stat-value"><?= $manual_backups ?></div>
+                    <div class="stat-change warning">
+                        <i class="fas fa-hands"></i> User Created
+                    </div>
+                </div>
+            </div>
+            <div class="stat-card">
+                <div class="stat-icon"><i class="fas fa-hdd"></i></div>
+                <div class="stat-content">
+                    <div class="stat-title">Total Size</div>
+                    <div class="stat-value"><?= $total_size_mb ?>MB</div>
+                    <div class="stat-change success">
+                        <i class="fas fa-weight"></i> Storage Used
+                    </div>
+                </div>
+            </div>
         </div>
 
         <!-- Current Time Display -->
-        <div class="card current-time">
-            <h3><i class="fas fa-clock"></i> Current Time</h3>
-            <p id="currentTime"><?php echo date('Y-m-d h:i:s A'); ?></p>
-            <p>Next Scheduled Backup: <span id="nextBackup"><?php echo $next_backup->format('Y-m-d h:i A'); ?></span></p>
+        <div class="backup-card">
+            <h3><i class="fas fa-clock"></i> Current Time & Next Backup</h3>
+            <p><strong>Current Time:</strong> <span id="currentTime"><?php echo date('Y-m-d h:i:s A'); ?></span></p>
+            <p><strong>Next Scheduled Backup:</strong> <span id="nextBackup"><?php echo $next_backup->format('Y-m-d h:i A'); ?></span></p>
+            <p><strong>Backup Frequency:</strong> <span class="backup-type-<?= $frequency === 'daily' ? 'auto' : 'manual' ?>">
+                <?= ucfirst(str_replace('_', ' ', $frequency)) ?>
+            </span></p>
         </div>
 
-        <!-- Manual Backup Form -->
-        <div class="card manual-backup">
-            <h3><i class="fas fa-plus-circle"></i> Manual Backup</h3>
-            <form method="POST" id="backupForm">
-                <button type="button" onclick="showModal('Create Backup', 'Are you sure you want to create a new backup?', handleManualBackup, false)" class="btn btn-primary">
-                    <i class="fas fa-plus"></i> Create Manual Backup
-                </button>
-                <input type="hidden" name="backup" value="1">
-            </form>
+        <!-- Backup Cards Section -->
+        <div class="backup-cards">
+            <!-- Manual Backup Card -->
+            <div class="backup-card">
+                <h3><i class="fas fa-plus-circle"></i> Manual Backup</h3>
+                <p>Create an immediate database backup. The backup file will be downloaded automatically.</p>
+                <form method="POST" id="backupForm">
+                    <button type="button" onclick="showModal('Create Backup', 'Are you sure you want to create a new manual backup?', handleManualBackup, false)" class="btn btn-primary">
+                        <i class="fas fa-plus"></i> Create Manual Backup
+                    </button>
+                    <input type="hidden" name="backup" value="1">
+                </form>
+            </div>
+
+            <!-- Automatic Backup Settings Card -->
+            <div class="backup-card">
+                <h3><i class="fas fa-cog"></i> Automatic Backup Settings</h3>
+                <p>Configure automatic backup frequency and schedule.</p>
+                <form method="POST" id="settingsForm">
+                    <div class="input-group">
+                        <label for="frequency"><i class="fas fa-calendar-alt"></i> Backup Frequency</label>
+                        <select id="frequency" name="frequency" class="period-select" required>
+                            <option value="daily" <?= $frequency == 'daily' ? 'selected' : ''; ?>>Daily</option>
+                            <option value="every_other_day" <?= $frequency == 'every_other_day' ? 'selected' : ''; ?>>Every Other Day</option>
+                            <option value="every_month" <?= $frequency == 'every_month' ? 'selected' : ''; ?>>Every Month (1st)</option>
+                        </select>
+                    </div>
+                    <button type="button" onclick="showModal('Update Settings', 'Are you sure you want to update the automatic backup settings?', () => document.getElementById('settingsForm').submit(), false)" class="btn btn-primary">
+                        <i class="fas fa-save"></i> Save Settings
+                    </button>
+                    <input type="hidden" name="update_settings" value="1">
+                </form>
+            </div>
         </div>
 
-        <!-- Automatic Backup Settings (Setup Menu) -->
-        <div class="card backup-settings">
-            <h3><i class="fas fa-cog"></i> Automatic Backup Setup</h3>
-            <form method="POST" id="settingsForm">
-                <div class="input-group">
-                    <label for="frequency"><i class="fas fa-calendar-alt"></i> Backup Frequency</label>
-                    <select id="frequency" name="frequency" required>
-                        <option value="daily" <?php echo $frequency == 'daily' ? 'selected' : ''; ?>>Daily</option>
-                        <option value="every_other_day" <?php echo $frequency == 'every_other_day' ? 'selected' : ''; ?>>Every Other Day</option>
-                        <option value="every_month" <?php echo $frequency == 'every_month' ? 'selected' : ''; ?>>Every Month (1st)</option>
-                    </select>
-                </div>
-                <button type="button" onclick="showModal('Update Settings', 'Are you sure you want to update the automatic backup settings?', () => document.getElementById('settingsForm').submit(), false)" class="btn btn-primary">
-                    <i class="fas fa-save"></i> Save Settings
-                </button>
-                <input type="hidden" name="update_settings" value="1">
-            </form>
-        </div>
-
-        <!-- List Existing Backups -->
-        <div class="card backup-list">
-            <h3><i class="fas fa-file-archive"></i> Existing Backups</h3>
-            <?php if (empty($backupFiles)): ?>
-                <p class="no-backups">No backups found.</p>
-            <?php else: ?>
-                <div class="table-container">
-                    <table class="data-table" id="backupsTable">
+        <!-- Existing Backups Section -->
+        <div class="table-container">
+            <div style="padding: 20px;">
+                <h3 style="margin: 0 0 20px 0; font-size: 18px; color: #1e293b; display: flex; align-items: center; gap: 8px;">
+                    <i class="fas fa-file-archive"></i> Existing Backups
+                </h3>
+                <?php if (empty($backupFiles)): ?>
+                    <p style="text-align: center; color: #64748b; padding: 40px;">No backups found.</p>
+                <?php else: ?>
+                    <table class="data-table">
                         <thead>
                             <tr>
                                 <th>Filename</th>
                                 <th>Type</th>
                                 <th>Date</th>
+                                <th>Size</th>
                                 <th>Actions</th>
                             </tr>
                         </thead>
@@ -341,6 +948,7 @@ require_once 'includes/header.php';
                                 <?php
                                     $filename = basename($file);
                                     $isAuto = strpos($filename, 'auto_backup_') === 0;
+                                    $fileSize = round(filesize($file) / (1024 * 1024), 2);
                                 ?>
                                 <tr data-filename="<?php echo htmlspecialchars($filename); ?>">
                                     <td><?php echo htmlspecialchars($filename); ?></td>
@@ -348,6 +956,7 @@ require_once 'includes/header.php';
                                         <?php echo $isAuto ? 'Automatic' : 'Manual'; ?>
                                     </td>
                                     <td><?php echo date('Y-m-d H:i:s', filemtime($file)); ?></td>
+                                    <td><?php echo $fileSize; ?> MB</td>
                                     <td>
                                         <button class="btn-action download" onclick="showModal('Download Backup', 'Do you want to download <?php echo htmlspecialchars($filename); ?>?', () => handleDownload('<?php echo htmlspecialchars($file); ?>'), false)" title="Download">
                                             <i class="fas fa-download"></i>
@@ -360,8 +969,8 @@ require_once 'includes/header.php';
                             <?php endforeach; ?>
                         </tbody>
                     </table>
-                </div>
-            <?php endif; ?>
+                <?php endif; ?>
+            </div>
         </div>
     </div>
 </div>
@@ -477,7 +1086,7 @@ function checkSchedule() {
                     if (data.status !== 'skipped') {
                         const toast = document.createElement('div');
                         toast.className = `notification-toast ${data.status}`;
-                        toast.innerHTML = `<span>${data.message}</span><div class="notification-progress"></div>`;
+                        toast.innerHTML = `<span>${data.message}</span>`;
                         document.body.appendChild(toast);
                         setTimeout(() => {
                             toast.remove();
@@ -513,7 +1122,7 @@ function checkSchedule() {
                     loadingIndicator.style.display = 'none';
                     const toast = document.createElement('div');
                     toast.className = 'notification-toast error';
-                    toast.innerHTML = `<span>Error checking automatic backup: ${error.message}</span><div class="notification-progress"></div>`;
+                    toast.innerHTML = `<span>Error checking automatic backup: ${error.message}</span>`;
                     document.body.appendChild(toast);
                     setTimeout(() => {
                         toast.remove();
@@ -552,7 +1161,7 @@ function fetchBackupList() {
             refreshModal.style.display = 'none';
             const toast = document.createElement('div');
             toast.className = 'notification-toast error';
-            toast.innerHTML = `<span>Error refreshing backup list: ${error.message}</span><div class="notification-progress"></div>`;
+            toast.innerHTML = `<span>Error refreshing backup list: ${error.message}</span>`;
             document.body.appendChild(toast);
             setTimeout(() => {
                 toast.remove();
@@ -573,13 +1182,13 @@ function showModal(title, message, onConfirm, requireConfirmText = false, backup
     modalMessage.textContent = message;
     confirmInputGroup.style.display = requireConfirmText ? 'block' : 'none';
     confirmInput.value = '';
-    modal.style.display = 'flex';
+    modal.style.display = 'block';
 
     modalConfirm.onclick = () => {
         if (requireConfirmText && confirmInput.value !== 'CONFIRM') {
             const toast = document.createElement('div');
             toast.className = 'notification-toast error';
-            toast.innerHTML = `<span>Please type CONFIRM to verify deletion</span><div class="notification-progress"></div>`;
+            toast.innerHTML = `<span>Please type CONFIRM to verify deletion</span>`;
             document.body.appendChild(toast);
             setTimeout(() => {
                 toast.remove();
@@ -599,7 +1208,7 @@ function showRefreshLoading(message) {
     const refreshModal = document.getElementById('refreshLoadingModal');
     const refreshMessage = document.getElementById('refreshLoadingMessage');
     refreshMessage.textContent = message;
-    refreshModal.style.display = 'flex';
+    refreshModal.style.display = 'block';
 }
 
 function handleDownload(url) {
@@ -613,7 +1222,7 @@ function handleDownload(url) {
     // Show success notification
     const toast = document.createElement('div');
     toast.className = 'notification-toast success';
-    toast.innerHTML = `<span>Backup successfully downloaded!</span><div class="notification-progress"></div>`;
+    toast.innerHTML = `<span>Backup successfully downloaded!</span>`;
     document.body.appendChild(toast);
     setTimeout(() => {
         toast.remove();
@@ -626,7 +1235,7 @@ function handleDownload(url) {
 function handleDelete(filename, backupType) {
     const refreshModal = document.getElementById('refreshLoadingModal');
     refreshModal.querySelector('p').textContent = `Deleting ${backupType} backup...`;
-    refreshModal.style.display = 'flex';
+    refreshModal.style.display = 'block';
     
     fetch(`backup.php?delete=${filename}`)
         .then(response => response.json())
@@ -634,7 +1243,7 @@ function handleDelete(filename, backupType) {
             refreshModal.style.display = 'none';
             const toast = document.createElement('div');
             toast.className = `notification-toast ${data.status}`;
-            toast.innerHTML = `<span>${data.message}</span><div class="notification-progress"></div>`;
+            toast.innerHTML = `<span>${data.message}</span>`;
             document.body.appendChild(toast);
             setTimeout(() => {
                 toast.remove();
@@ -661,7 +1270,7 @@ function handleDelete(filename, backupType) {
             refreshModal.style.display = 'none';
             const toast = document.createElement('div');
             toast.className = 'notification-toast error';
-            toast.innerHTML = `<span>Error deleting backup: ${error.message}</span><div class="notification-progress"></div>`;
+            toast.innerHTML = `<span>Error deleting backup: ${error.message}</span>`;
             document.body.appendChild(toast);
             setTimeout(() => {
                 toast.remove();
@@ -675,7 +1284,7 @@ function handleManualBackup() {
     
     const refreshModal = document.getElementById('refreshLoadingModal');
     refreshModal.querySelector('p').textContent = 'Creating Manual backup...';
-    refreshModal.style.display = 'flex';
+    refreshModal.style.display = 'block';
     
     fetch('backup.php', {
         method: 'POST',
@@ -693,7 +1302,7 @@ function handleManualBackup() {
                 
                 const toast = document.createElement('div');
                 toast.className = 'notification-toast success';
-                toast.innerHTML = `<span>Backup successfully created!</span><div class="notification-progress"></div>`;
+                toast.innerHTML = `<span>Backup successfully created!</span>`;
                 document.body.appendChild(toast);
                 setTimeout(() => {
                     toast.remove();
@@ -705,7 +1314,7 @@ function handleManualBackup() {
                 refreshModal.style.display = 'none';
                 const toast = document.createElement('div');
                 toast.className = 'notification-toast error';
-                toast.innerHTML = `<span>${data.message}</span><div class="notification-progress"></div>`;
+                toast.innerHTML = `<span>${data.message}</span>`;
                 document.body.appendChild(toast);
                 setTimeout(() => {
                     toast.remove();
@@ -716,13 +1325,38 @@ function handleManualBackup() {
             refreshModal.style.display = 'none';
             const toast = document.createElement('div');
             toast.className = 'notification-toast error';
-            toast.innerHTML = `<span>Error creating backup: ${error.message}</span><div class="notification-progress"></div>`;
+            toast.innerHTML = `<span>Error creating backup: ${error.message}</span>`;
             document.body.appendChild(toast);
             setTimeout(() => {
                 toast.remove();
             }, 3000);
         });
 }
+
+// Close modal when clicking X or outside
+function setupModalCloseHandlers() {
+    // Close when clicking X button
+    document.querySelectorAll('.close-modal').forEach(btn => {
+        btn.addEventListener('click', function() {
+            const modal = this.closest('.modal');
+            if (modal) {
+                modal.style.display = 'none';
+            }
+        });
+    });
+
+    // Close when clicking outside modal content
+    document.querySelectorAll('.modal').forEach(modal => {
+        modal.addEventListener('click', function(event) {
+            if (event.target === this) {
+                this.style.display = 'none';
+            }
+        });
+    });
+}
+
+// Initialize modal close handlers when DOM is loaded
+setupModalCloseHandlers();
 
 document.addEventListener('DOMContentLoaded', function() {
     // Auto-hide notification toast
@@ -746,5 +1380,3 @@ document.addEventListener('DOMContentLoaded', function() {
 </script>
 
 <?php require_once 'includes/footer.php'; ?>
-</body>
-</html>
